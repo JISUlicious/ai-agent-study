@@ -1,0 +1,510 @@
+<title>에이전트 구성요소 슬라이드</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one-screen stage. Left = the component diagram (bottom-up tree in four columns), right = speaker panel that follows the selection. */
+:root {
+  --bg: #F3F5F8;
+  --surface: #FFFFFF;
+  --ink: #17212B;
+  --muted: #5C6977;
+  --line: #D3DAE1;
+  --frame: #E9EDF2;
+  --c-reason: #5F52C4;
+  --c-control: #0D7A84;
+  --c-memory: #A96A12;
+  --c-tool: #B8405F;
+  --c-base: #3C8553;
+  --focus: #1B66D6;
+  --font: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10161C; --surface: #19222B; --ink: #E7EDF2; --muted: #97A5B3; --line: #2D3A47; --frame: #151D25;
+    --c-reason: #9D93F0; --c-control: #45B8C2; --c-memory: #E0A44A; --c-tool: #EC7F9B; --c-base: #6FC088; --focus: #7FB0FF;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10161C; --surface: #19222B; --ink: #E7EDF2; --muted: #97A5B3; --line: #2D3A47; --frame: #151D25;
+  --c-reason: #9D93F0; --c-control: #45B8C2; --c-memory: #E0A44A; --c-tool: #EC7F9B; --c-base: #6FC088; --focus: #7FB0FF;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.55;
+  display: flex; flex-direction: column;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px;
+  box-sizing: border-box;
+}
+*, *::before, *::after { box-sizing: border-box; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; padding-bottom: 10px; }
+.top h1 { font-size: 18px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tab {
+  border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 12px; font-size: 13px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.tab .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.tab[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.keys { margin-left: auto; font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+
+.stage { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(300px, 1fr); gap: 16px; }
+.diagram { min-width: 0; min-height: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px; overflow: auto; }
+.diagram svg { display: block; width: 100%; height: 100%; }
+.panel { min-width: 0; min-height: 0; overflow-y: auto; padding: 4px 4px 12px; }
+
+/* diagram */
+.col-frame { fill: var(--frame); stroke: var(--line); }
+.col-frame.on { stroke-width: 2; }
+.col-head { cursor: pointer; }
+.col-head rect { fill: var(--surface); stroke: var(--line); }
+.col-head text { font-size: 14px; font-weight: 600; fill: var(--ink); text-anchor: middle; }
+.col-head.on rect { stroke-width: 2; }
+.base-label { font-family: var(--mono); font-size: 11px; fill: var(--muted); }
+.node { cursor: pointer; transition: opacity .15s; }
+.node rect { stroke-width: 1.4; }
+.node .ko { font-size: 13.5px; font-weight: 600; fill: var(--ink); text-anchor: middle; }
+.node .en { font-family: var(--mono); font-size: 10.5px; fill: var(--muted); text-anchor: middle; }
+.node.agent rect { fill: var(--ink); stroke: var(--ink); }
+.node.agent .ko { fill: var(--bg); }
+.node.agent .en { fill: var(--bg); opacity: .75; }
+.node.sel rect { stroke-width: 3; stroke: var(--ink); }
+.node.agent.sel rect { stroke: var(--focus); }
+.edge { fill: none; stroke: var(--muted); stroke-width: 1.2; opacity: .55; transition: opacity .15s; }
+.head { fill: var(--muted); opacity: .55; transition: opacity .15s; }
+svg.has-sel .node:not(.on) { opacity: .16; }
+svg.has-sel .edge:not(.on) { opacity: .07; }
+svg.has-sel .head:not(.on) { opacity: .07; }
+svg.has-sel .edge.on { opacity: .9; stroke: var(--ink); stroke-width: 1.6; }
+svg.has-sel .head.on { opacity: .9; fill: var(--ink); }
+svg.has-sel .edge.direct { stroke: var(--focus); stroke-width: 2.6; opacity: 1; }
+svg.has-sel .head.direct { fill: var(--focus); opacity: 1; }
+
+/* panel */
+.eyebrow { font-family: var(--mono); font-size: 12px; color: var(--muted); letter-spacing: .02em; display: flex; align-items: center; gap: 8px; }
+.eyebrow .dot { width: 9px; height: 9px; border-radius: 50%; }
+.panel h2 { font-size: 28px; line-height: 1.25; margin: 6px 0 2px; letter-spacing: -0.02em; text-wrap: balance; }
+.panel .en-name { font-family: var(--mono); font-size: 14px; color: var(--muted); }
+.panel .impl { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.panel .lead { font-size: 17px; margin: 14px 0 18px; max-width: 34em; }
+.panel h3 { font-size: 13px; font-weight: 600; color: var(--muted); margin: 20px 0 8px; }
+.inlist, .outlist, .flow { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.incard { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.incard .from { font-size: 12.5px; color: var(--muted); }
+.incard .carry { font-size: 16px; font-weight: 600; margin: 2px 0 4px; }
+.incard .why { font-size: 14.5px; }
+.linkbtn { background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; color: inherit; }
+.outitem { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; border-top: 1px solid var(--line); padding-top: 8px; }
+.outitem .key { font-size: 16px; font-weight: 600; }
+.outitem .to { font-size: 13px; color: var(--muted); }
+.flow button {
+  width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; cursor: pointer;
+  display: flex; align-items: baseline; gap: 10px;
+}
+.flow .n { font-family: var(--mono); font-size: 12px; color: var(--muted); min-width: 1.4em; }
+.flow .k { font-weight: 600; }
+.flow .e { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.nav { display: flex; gap: 8px; margin-top: 22px; flex-wrap: wrap; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 7px 14px; cursor: pointer; font-size: 14px; }
+.btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.btn:disabled { opacity: .4; cursor: default; }
+.how { margin: 0; padding-left: 1.2em; }
+.how li { margin: 4px 0; }
+.note { font-size: 12.5px; color: var(--muted); margin-top: 22px; max-width: 40em; }
+
+@media (max-width: 860px) {
+  html, body { height: auto; }
+  .stage { grid-template-columns: minmax(0, 1fr); }
+  .diagram svg { min-width: 720px; height: auto; }
+  .keys { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .node, .edge, .head { transition: none; } }
+</style>
+
+<header class="top">
+  <h1>에이전트 구성요소</h1>
+  <div class="tabs" id="tabs"></div>
+  <div class="keys">← → 이동 · Esc 전체 보기</div>
+</header>
+<main class="stage">
+  <div class="diagram"><svg id="svg" viewBox="-24 -8 1260 846" role="img" aria-label="에이전트 구성요소 다이어그램"></svg></div>
+  <section class="panel" id="panel" aria-live="polite"></section>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  var COLS = [
+    { id: "reason", ko: "추론/결정", x: 0 },
+    { id: "control", ko: "제어/반복", x: 300 },
+    { id: "memory", ko: "기억/기록", x: 600 },
+    { id: "tool", ko: "실행 도구/환경", x: 900 }
+  ];
+  var W = 150, H = 56;
+  var NODES = [
+    { id: "agent", ko: "범용 에이전트", en: "General-purpose agent", impl: "Manus · 2025, Claude Cowork · 2026", x: 20, y: 70, w: 1160, h: 44, layer: "agent", cols: ["reason", "control", "memory", "tool"],
+      sum: "아래 요소들이 모여, 코딩을 넘어 일반 업무까지 수행하는 에이전트가 됩니다." },
+    { id: "goal", ko: "목표 반복 루프", en: "Goal · Ralph Loop", impl: "Ralph loop · 2025", x: 375, y: 150, layer: "tech", cols: ["control"],
+      sum: "목표를 정해 두고, 달성될 때까지 에이전트에게 작업을 반복해서 시키는 바깥 루프입니다." },
+    { id: "ce", ko: "컨텍스트 엔지니어링", en: "Context engineering", impl: "2025", x: 545, y: 150, w: 390, layer: "tech", cols: ["control", "memory"],
+      sum: "매 턴 모델이 보게 될 토큰 전체(지시, 기록, 검색 결과, 도구 정의)를 무엇으로 채울지 설계하는 일입니다." },
+    { id: "sandbox", ko: "샌드박스", en: "Sandbox", impl: "", x: 990, y: 150, layer: "tech", cols: ["tool"],
+      sum: "도구가 실행되는 환경을 격리해, 에이전트의 행동이 미치는 범위를 제한합니다." },
+    { id: "hook", ko: "훅", en: "Hook", impl: "LangChain callbacks · 2023, Claude Code hooks · 2025", x: 375, y: 250, layer: "tech", cols: ["control"],
+      sum: "루프의 정해진 지점(도구 호출 전후, 종료 시점 등)에 사용자 코드를 끼워 넣는 장치입니다." },
+    { id: "skills", ko: "스킬", en: "Agent Skills", impl: "2025", x: 805, y: 250, layer: "tech", cols: ["memory", "tool"],
+      sum: "특정 작업의 지시문, 스크립트, 자료를 묶어 두고 필요할 때만 불러오는 꾸러미입니다." },
+    { id: "cu", ko: "컴퓨터 사용", en: "Computer Use", impl: "2024", x: 990, y: 250, layer: "tech", cols: ["tool"],
+      sum: "화면을 보고 마우스와 키보드를 조작하는 일을 도구로 제공합니다." },
+    { id: "loop", ko: "에이전트 루프", en: "Agent loop", impl: "ReAct · 2022, Reflexion · 2023", x: 375, y: 350, layer: "tech", cols: ["control"],
+      sum: "생각 → 행동 → 관찰을 반복하며, 앞선 결과를 보고 다음 행동을 스스로 정합니다." },
+    { id: "memory", ko: "에이전트 메모리", en: "Agent Memory", impl: "컨텍스트 안(internal) · 외부 저장소(external)", x: 675, y: 350, layer: "tech", cols: ["memory"],
+      sum: "작업 중 쌓이는 기록(컨텍스트 안)과, 필요할 때 꺼내 쓰는 저장소(외부)를 합쳐 부르는 말입니다." },
+    { id: "mcp", ko: "도구 연결 프로토콜", en: "MCP", impl: "Model Context Protocol · 2024", x: 990, y: 350, layer: "tech", cols: ["tool"],
+      sum: "도구와 데이터 소스를 에이전트에 연결하는 방식을 표준화한 프로토콜입니다." },
+    { id: "planning", ko: "계획", en: "Planning", impl: "과제 분해", x: 225, y: 450, layer: "tech", cols: ["reason", "control"],
+      sum: "큰 과제를 작은 단계로 나누고 순서를 정하는 일입니다." },
+    { id: "pe", ko: "프롬프트 엔지니어링", en: "Prompt Engineering", impl: "2020–21", x: 375, y: 550, layer: "tech", cols: ["control"],
+      sum: "원하는 동작이 나오도록 지시문과 예시를 설계하는 일입니다." },
+    { id: "rag", ko: "검색 결합 생성", en: "RAG", impl: "Retrieval-Augmented Generation · 2020", x: 675, y: 550, layer: "tech", cols: ["memory"],
+      sum: "질문과 관련된 문서를 찾아 함께 넣어 주고, 그것을 근거로 답하게 하는 방법입니다." },
+    { id: "tool", ko: "도구 호출", en: "Tool call", impl: "WebGPT · 2021, Toolformer · 2023, Function calling · 2023", x: 990, y: 550, layer: "tech", cols: ["tool"],
+      sum: "모델이 정해진 형식으로 외부 기능을 부르고, 그 실행 결과를 다시 받아 쓰는 것입니다." },
+    { id: "cot", ko: "단계별 추론", en: "Chain-of-Thought", impl: "2022", x: 75, y: 670, layer: "base", cols: ["reason"],
+      sum: "답을 바로 내지 않고 중간 추론 과정을 글로 쓰게 하면 복잡한 문제를 더 잘 풉니다." },
+    { id: "icl", ko: "문맥 내 학습", en: "In-context learning", impl: "GPT-3 · 2020", x: 375, y: 670, layer: "base", cols: ["control"],
+      sum: "모델을 다시 학습시키지 않아도, 프롬프트에 넣어 준 예시와 지시를 읽고 그에 맞게 답하는 능력입니다." },
+    { id: "limit", ko: "한계: 환각", en: "Limit: hallucinations", impl: "", x: 675, y: 670, layer: "base", limit: true, cols: ["memory"],
+      sum: "학습한 뒤의 사실이나 본 적 없는 정보는 알지 못하고, 그럴듯하게 지어낼 수 있습니다." },
+    { id: "instr", ko: "지시 튜닝", en: "Instruction tuning", impl: "InstructGPT · 2022", x: 990, y: 670, layer: "base", cols: ["tool"],
+      sum: "지시문을 따르도록 미세조정해, 질의응답, 지시 이행, 구조화된 출력을 안정적으로 하게 만든 것입니다." },
+    { id: "llm", ko: "LLM", en: "generates text token-by-token", impl: "Transformer · 2017", x: 525, y: 770, layer: "root", cols: [],
+      sum: "다음 토큰을 하나씩 예측해 텍스트를 생성하는 모델입니다. 에이전트의 판단을 맡는 엔진입니다." }
+  ];
+  var EDGES = [
+    { f: "llm", t: "cot", carry: "토큰을 순서대로 생성한다는 성질", why: "앞에 쓴 추론이 뒤의 생성에 조건으로 작용하므로, 풀이 과정을 먼저 쓰게 하면 답이 좋아집니다.", key: "추론을 글로 쓴다" },
+    { f: "llm", t: "icl", carry: "프롬프트 전체를 조건으로 다음 토큰을 예측하는 방식", why: "모델이 커지면서, 프롬프트 속 예시의 패턴을 그대로 이어 가는 능력이 나타났습니다.", key: "넣어 주면 따른다" },
+    { f: "llm", t: "limit", carry: "학습 데이터에서 본 패턴으로만 생성한다는 점", why: "사실 여부를 확인하지 않고 그럴듯한 다음 토큰을 고르기 때문에, 모르는 것도 지어낼 수 있습니다.", key: "모르는 것은 밖에서 가져와야 한다" },
+    { f: "llm", t: "instr", carry: "사전학습으로 얻은 언어 능력", why: "이어 쓰기만 하던 모델을 지시와 응답의 쌍으로 미세조정해, 시킨 일을 하도록 맞췄습니다.", key: "시킨 대로, 정해진 형식으로" },
+    { f: "cot", t: "planning", carry: "중간 단계를 글로 풀어 쓰는 방식", why: "풀이를 단계로 쓰는 방식을, 실행에 앞서 과제를 하위 단계로 나누는 데 썼습니다.", key: "과제 분해", sa: "t", so: 20 },
+    { f: "cot", t: "loop", carry: "생각을 글로 쓰는 추론", why: "ReAct는 추론(Reason)에 행동(Act)을 번갈아 끼워, 생각한 뒤 행동하고 결과를 보고 다시 생각하게 했습니다.", key: "생각 → 행동 → 관찰", sa: "t", so: -20, ta: "l" },
+    { f: "planning", t: "loop", carry: "나눠 놓은 하위 단계", why: "계획이 루프가 무엇을 어떤 순서로 할지 정하고, 루프는 결과에 따라 계획을 고칩니다.", key: "다음 행동의 결정", to: -32 },
+    { f: "icl", t: "pe", carry: "프롬프트에 따라 동작이 달라진다는 사실", why: "학습 없이 입력만 바꿔 동작을 조정할 수 있으니, 입력을 잘 쓰는 일이 기술이 됐습니다.", key: "지시문과 예시의 설계" },
+    { f: "pe", t: "loop", carry: "프롬프트로 출력 형식을 정하는 기법", why: "ReAct는 생각, 행동, 관찰의 형식을 few-shot 예시로 보여 주는 프롬프트 기법으로 시작했습니다.", key: "루프를 프롬프트로 구현" },
+    { f: "icl", t: "rag", carry: "컨텍스트에 넣어 준 내용을 근거로 답하는 능력", why: "찾아온 문서를 프롬프트에 넣기만 하면 모델이 그것을 활용합니다. 초기 RAG는 별도 학습을 썼지만 지금은 이 방식이 일반적입니다.", key: "검색해서 넣어 준다", so: 34, to: -30 },
+    { f: "limit", t: "rag", carry: "모르는 사실을 지어내는 문제", why: "답의 근거가 될 문서를 밖에서 찾아 넣어 주면 환각이 줄어듭니다.", key: "근거를 밖에서 가져온다" },
+    { f: "icl", t: "memory", carry: "컨텍스트에 있는 것을 기억처럼 쓰는 능력", why: "모델 자체는 대화 사이에 아무것도 기억하지 못합니다. 기억은 컨텍스트에 다시 넣어 주는 방식으로만 가능합니다.", key: "컨텍스트 안의 기록", sa: "r", so: -8, ta: "l", to: -12 },
+    { f: "rag", t: "memory", carry: "저장소에서 찾아 넣는 방식", why: "문서 대신 에이전트 자신의 과거 기록을 저장하고 검색하면 장기 기억이 됩니다.", key: "외부 저장소 + 검색" },
+    { f: "tool", t: "memory", carry: "도구로 읽고 쓰는 방식", why: "MemGPT처럼 메모리를 읽고 쓰는 동작을 도구 호출로 제공하면, 에이전트가 기억을 스스로 관리합니다.", key: "메모리를 도구로 다룬다", sa: "l", so: -10, ta: "r", to: -8 },
+    { f: "instr", t: "tool", carry: "지시를 따르고 정해진 형식으로 출력하는 능력", why: "도구 호출은 스키마에 맞는 구조화된 출력(JSON)을 내는 일이라, 형식을 지키는 능력이 전제입니다. 여기서 이어지는 것은 Function calling(2023)입니다. WebGPT(2021)와 Toolformer(2023)는 도구 사용만을 위한 별도 fine-tuning이었습니다. WebGPT는 사람의 시연을 모방했고, Toolformer는 모델이 스스로 만든 데이터로 학습했습니다. Function calling부터는 스키마로 알려 준 임의의 도구를 부르도록, 지시를 따르는 대화 모델에 함께 학습시킵니다.", key: "구조화된 호출" },
+    { f: "icl", t: "skills", carry: "넣어 준 지시를 읽고 따르는 능력", why: "스킬은 결국 필요한 순간에 컨텍스트에 넣는 지시문 묶음입니다.", key: "필요할 때 불러오는 지시문", pts: [[525, 710], [650, 710], [650, 328], [880, 328], [880, 306]] },
+    { f: "tool", t: "skills", carry: "외부 기능을 부르는 방식", why: "스킬은 지시문에 스크립트와 자료를 함께 묶어, 도구를 어떻게 쓰는지까지 담습니다.", key: "사용법이 딸린 도구 묶음", so: -40 },
+    { f: "tool", t: "mcp", carry: "도구 정의와 호출 형식", why: "도구마다, 앱마다 따로 연결하던 것을 한 가지 규약으로 통일했습니다.", key: "한 번 만들면 어디서나 연결" },
+    { f: "tool", t: "cu", carry: "행동을 호출로 표현하는 방식", why: "API가 없는 프로그램도, 화면 조작을 하나의 도구로 만들면 쓸 수 있습니다.", key: "화면을 도구로", sa: "r", so: 8, ta: "r", to: 8, k: 55 },
+    { f: "tool", t: "sandbox", carry: "모델이 실제로 무언가를 실행한다는 사실", why: "실행에는 위험이 따르므로, 행동이 미치는 범위를 격리된 환경으로 제한합니다.", key: "안전한 실행 환경", sa: "r", so: -8, ta: "r", k: 95 },
+    { f: "tool", t: "loop", carry: "행동과 그 결과", why: "루프의 '행동'이 도구 호출이고 '관찰'이 그 결과입니다. 도구가 없으면 루프가 돌릴 것이 없습니다.", key: "행동 → 관찰", pts: [[1010, 550], [1010, 478], [490, 478], [490, 406]] },
+    { f: "memory", t: "loop", carry: "지난 턴의 기록", why: "이전 결과를 참고해 오류를 고치고 다음 행동을 정하려면 기록이 남아 있어야 합니다.", key: "이전 결과를 보고 고친다", sa: "l", so: 12, ta: "r", to: 12 },
+    { f: "memory", t: "ce", carry: "쌓이는 기록과 꺼내 올 수 있는 저장소", why: "기록은 계속 늘지만 컨텍스트 창은 한정돼 있어, 무엇을 남기고 무엇을 꺼낼지 골라야 합니다.", key: "무엇을 넣고 뺄지", ax: 750 },
+    { f: "skills", t: "ce", carry: "필요할 때만 불러오는 방식", why: "모든 지시를 처음부터 넣지 않고 필요한 것만 그때 넣는 방식(progressive disclosure)이 컨텍스트를 아낍니다.", key: "점진적 공개", ax: 880 },
+    { f: "loop", t: "hook", carry: "반복되는 실행 구조", why: "루프에는 도구 호출 전후 같은 정해진 지점이 있어, 거기에 검사나 추가 동작을 끼울 수 있습니다.", key: "루프를 고쳐 쓰는 지점" },
+    { f: "hook", t: "goal", carry: "종료 시점에 끼어드는 장치", why: "끝나려는 순간을 훅으로 잡아, 목표가 달성되지 않았으면 다시 돌립니다. Ralph 플러그인이 Stop 훅으로 구현됐습니다.", key: "끝날 때 다시 시작" },
+    { f: "loop", t: "goal", carry: "한 번의 작업을 끝까지 수행하는 루프", why: "안쪽 루프가 한 번 끝나도 목표에 못 미칠 수 있어, 바깥에 반복을 한 겹 더 두릅니다.", key: "목표까지 반복", sa: "l", so: -10, ta: "l", k: 60 },
+    { f: "loop", t: "ce", carry: "턴마다 쌓이는 생각, 행동, 관찰", why: "루프가 돌수록 컨텍스트가 불어나므로, 매 턴 무엇을 보여 줄지 추려야 합니다.", key: "턴마다 컨텍스트 관리", sa: "r", so: -12, ta: "b", ax: 585 },
+    { f: "pe", t: "ce", carry: "지시문을 설계하는 일", why: "지시문 한 편을 쓰는 일에서, 모델이 보는 토큰 전체를 관리하는 일로 범위가 넓어졌습니다.", key: "프롬프트에서 컨텍스트 전체로", sa: "r", ta: "b", ax: 625, k: 150 },
+    { f: "hook", t: "agent", carry: "루프에 끼우는 검사와 확장", why: "사용자가 에이전트의 동작을 자기 환경에 맞게 통제하고 고칠 수 있게 됩니다.", key: "통제와 맞춤", sa: "l", ta: "b", ax: 300, k: 70 },
+    { f: "goal", t: "agent", carry: "목표까지 스스로 반복하는 능력", why: "사람이 매번 다음 지시를 내리지 않아도 긴 작업을 끝까지 수행합니다.", key: "긴 작업의 자율 수행", ax: 450 },
+    { f: "ce", t: "agent", carry: "잘 골라진 컨텍스트", why: "긴 작업에서도 필요한 정보만 보게 해 판단의 질을 유지합니다.", key: "긴 작업에서도 유지되는 판단", ax: 740 },
+    { f: "sandbox", t: "agent", carry: "격리된 실행 환경", why: "안전이 확보돼야 사람의 승인 없이 더 많은 행동을 맡길 수 있습니다.", key: "맡길 수 있는 범위", ax: 1065 },
+    { f: "mcp", t: "agent", carry: "표준화된 연결", why: "업무용 앱과 데이터에 손쉽게 연결돼, 코딩 밖의 일까지 다룹니다.", key: "연결되는 업무 도구", pts: [[990, 378], [972, 378], [972, 114]] },
+    { f: "cu", t: "agent", carry: "화면 조작", why: "API가 없는 프로그램도 다룰 수 있어, 할 수 있는 일의 범위가 넓어집니다.", key: "어떤 프로그램이든", pts: [[1140, 266], [1168, 266], [1168, 114]] }
+  ];
+  var SECTIONS = {
+    base: { ko: "공통 기반", color: "var(--c-base)", seq: ["llm", "icl", "instr", "cot", "limit"],
+      desc: "모든 것의 출발점입니다. LLM이 텍스트를 생성하는 방식에서 세 가지 능력과 한 가지 한계가 나옵니다." },
+    reason: { ko: "추론/결정", color: "var(--c-reason)", seq: ["cot", "planning", "agent"],
+      desc: "무엇을 할지 정하는 능력입니다. 추론을 글로 쓰는 데서 시작해 계획으로 이어집니다." },
+    control: { ko: "제어/반복", color: "var(--c-control)", seq: ["icl", "pe", "planning", "loop", "hook", "goal", "ce", "agent"],
+      desc: "루프를 돌리고, 루프에 끼어들고, 목표까지 반복하게 하는 흐름입니다." },
+    memory: { ko: "기억/기록", color: "var(--c-memory)", seq: ["limit", "rag", "memory", "skills", "ce", "agent"],
+      desc: "모르는 것을 밖에서 가져오고, 지난 일을 남겨 두었다가 꺼내 쓰는 흐름입니다." },
+    tool: { ko: "실행 도구/환경", color: "var(--c-tool)", seq: ["instr", "tool", "mcp", "skills", "cu", "sandbox", "agent"],
+      desc: "바깥세상에 행동하는 수단과, 그 행동이 일어나는 환경입니다." }
+  };
+  var SEC_ORDER = ["base", "reason", "control", "memory", "tool"];
+
+  var byId = {}, i;
+  for (i = 0; i < NODES.length; i++) { var n = NODES[i]; if (!n.w) n.w = W; if (!n.h) n.h = H; byId[n.id] = n; }
+  var ALL = [];
+  SEC_ORDER.forEach(function (s) { SECTIONS[s].seq.forEach(function (id) { if (ALL.indexOf(id) < 0) ALL.push(id); }); });
+
+  var svg = document.getElementById("svg"), panel = document.getElementById("panel"), tabs = document.getElementById("tabs");
+  var NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, parent) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  /* ---------- geometry ---------- */
+  function anchor(n, side, off, ax) {
+    off = off || 0;
+    var cx = n.x + n.w / 2, cy = n.y + n.h / 2;
+    if (side === "t") return { x: ax != null ? ax : cx + off, y: n.y, nx: 0, ny: -1 };
+    if (side === "b") return { x: ax != null ? ax : cx + off, y: n.y + n.h, nx: 0, ny: 1 };
+    if (side === "l") return { x: n.x, y: cy + off, nx: -1, ny: 0 };
+    return { x: n.x + n.w, y: cy + off, nx: 1, ny: 0 };
+  }
+  function edgeGeom(e) {
+    if (e.pts) {
+      var p = e.pts, d = "M" + p[0][0] + "," + p[0][1], r = 9;
+      for (var j = 1; j < p.length - 1; j++) {
+        var a = p[j - 1], b = p[j], c = p[j + 1];
+        var d1 = Math.hypot(b[0] - a[0], b[1] - a[1]), d2 = Math.hypot(c[0] - b[0], c[1] - b[1]);
+        var r1 = Math.min(r, d1 / 2), r2 = Math.min(r, d2 / 2);
+        var q1 = [b[0] - (b[0] - a[0]) / d1 * r1, b[1] - (b[1] - a[1]) / d1 * r1];
+        var q2 = [b[0] + (c[0] - b[0]) / d2 * r2, b[1] + (c[1] - b[1]) / d2 * r2];
+        d += " L" + q1[0] + "," + q1[1] + " Q" + b[0] + "," + b[1] + " " + q2[0] + "," + q2[1];
+      }
+      var last = p[p.length - 1], prev = p[p.length - 2];
+      d += " L" + last[0] + "," + last[1];
+      return { d: d, end: last, dir: [last[0] - prev[0], last[1] - prev[1]] };
+    }
+    var from = byId[e.f], to = byId[e.t];
+    var p0 = anchor(from, e.sa || "t", e.so, null);
+    var p3 = anchor(to, e.ta || "b", e.to, e.ax);
+    var dist = Math.hypot(p3.x - p0.x, p3.y - p0.y);
+    var k = e.k || Math.max(22, Math.min(150, dist * 0.45));
+    var c1 = [p0.x + p0.nx * k, p0.y + p0.ny * k], c2 = [p3.x + p3.nx * k, p3.y + p3.ny * k];
+    return { d: "M" + p0.x + "," + p0.y + " C" + c1[0] + "," + c1[1] + " " + c2[0] + "," + c2[1] + " " + p3.x + "," + p3.y,
+      end: [p3.x, p3.y], dir: [-p3.nx, -p3.ny] };
+  }
+  function headPts(end, dir) {
+    var L = Math.hypot(dir[0], dir[1]) || 1, ux = dir[0] / L, uy = dir[1] / L, s = 8, w = 4;
+    var bx = end[0] - ux * s, by = end[1] - uy * s;
+    return end[0] + "," + end[1] + " " + (bx - uy * w) + "," + (by + ux * w) + " " + (bx + uy * w) + "," + (by - ux * w);
+  }
+
+  /* ---------- draw ---------- */
+  var defs = el("defs", {}, svg);
+  function tint(c) { return "color-mix(in srgb, var(--c-" + c + ") 15%, var(--surface))"; }
+  [["reason", "control"], ["control", "memory"], ["memory", "tool"]].forEach(function (p) {
+    var g = el("linearGradient", { id: "g-" + p[0] + "-" + p[1], x1: "0", x2: "1", y1: "0", y2: "0" }, defs);
+    el("stop", { offset: "0.35", style: "stop-color:" + tint(p[0]) }, g);
+    el("stop", { offset: "0.65", style: "stop-color:" + tint(p[1]) }, g);
+  });
+  var gFrames = el("g", {}, svg), gEdges = el("g", {}, svg), gNodes = el("g", {}, svg);
+  var frameEls = {}, headEls = {};
+  COLS.forEach(function (c) {
+    frameEls[c.id] = el("rect", { "class": "col-frame", x: c.x, y: 44, width: 300, height: 592 }, gFrames);
+    var g = el("g", { "class": "col-head", tabindex: "0", role: "button", "aria-label": c.ko + " 열 선택" }, gFrames);
+    el("rect", { x: c.x + 50, y: 0, width: 200, height: 34, rx: 17, style: "stroke:var(--c-" + c.id + ")" }, g);
+    el("text", { x: c.x + 150, y: 22 }, g).textContent = c.ko;
+    g.addEventListener("click", function () { selectSection(c.id); });
+    g.addEventListener("keydown", function (ev) { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); selectSection(c.id); } });
+    headEls[c.id] = g;
+  });
+  el("text", { "class": "base-label", x: 0, y: 656 }, gFrames).textContent = "공통 기반 · LLM의 성질";
+
+  var edgeEls = [];
+  EDGES.forEach(function (e) {
+    var g = edgeGeom(e);
+    var path = el("path", { "class": "edge", d: g.d }, gEdges);
+    var head = el("polygon", { "class": "head", points: headPts(g.end, g.dir) }, gEdges);
+    edgeEls.push({ e: e, path: path, head: head });
+  });
+  var nodeEls = {};
+  NODES.forEach(function (n) {
+    var g = el("g", { "class": "node " + n.layer, tabindex: "0", role: "button", "aria-label": n.ko + " (" + n.en + ")" }, gNodes);
+    var fill, stroke, dash = null;
+    if (n.layer === "agent") { fill = ""; stroke = ""; }
+    else if (n.layer === "root") { fill = "var(--surface)"; stroke = "var(--ink)"; }
+    else if (n.layer === "base") { fill = tint("base"); stroke = "var(--c-base)"; if (n.limit) { fill = "var(--surface)"; dash = "5 4"; } }
+    else if (n.cols.length === 2) { fill = "url(#g-" + n.cols[0] + "-" + n.cols[1] + ")"; stroke = "var(--muted)"; }
+    else { fill = tint(n.cols[0]); stroke = "var(--c-" + n.cols[0] + ")"; }
+    var r = el("rect", { x: n.x, y: n.y, width: n.w, height: n.h, rx: 7 }, g);
+    if (fill) r.setAttribute("style", "fill:" + fill + ";stroke:" + stroke);
+    if (dash) r.setAttribute("stroke-dasharray", dash);
+    var cx = n.x + n.w / 2;
+    if (n.layer === "agent") {
+      var t = el("text", { "class": "ko", x: cx, y: n.y + 28 }, g);
+      t.textContent = n.ko + "  ";
+      var ts = el("tspan", { "class": "en" }, t); ts.textContent = n.en;
+    } else {
+      el("text", { "class": "ko", x: cx, y: n.y + 24 }, g).textContent = n.ko;
+      el("text", { "class": "en", x: cx, y: n.y + 43 }, g).textContent = n.en;
+    }
+    g.addEventListener("click", function () { selectNode(n.id, false); });
+    g.addEventListener("keydown", function (ev) { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); selectNode(n.id, false); } });
+    nodeEls[n.id] = g;
+  });
+
+  SEC_ORDER.forEach(function (s) {
+    var b = document.createElement("button");
+    b.className = "tab"; b.type = "button"; b.id = "tab-" + s; b.setAttribute("aria-pressed", "false");
+    b.innerHTML = '<span class="dot" style="background:' + SECTIONS[s].color + '"></span>' + esc(SECTIONS[s].ko);
+    b.addEventListener("click", function () { selectSection(s); });
+    tabs.appendChild(b);
+  });
+  var allTab = document.createElement("button");
+  allTab.className = "tab"; allTab.type = "button"; allTab.id = "tab-all"; allTab.textContent = "전체";
+  allTab.addEventListener("click", clearSel);
+  tabs.insertBefore(allTab, tabs.firstChild);
+
+  /* ---------- graph helpers ---------- */
+  function reach(id, dir) {
+    var seen = {}, stack = [id];
+    while (stack.length) {
+      var cur = stack.pop();
+      EDGES.forEach(function (e) {
+        var nxt = dir > 0 ? (e.f === cur ? e.t : null) : (e.t === cur ? e.f : null);
+        if (nxt && !seen[nxt]) { seen[nxt] = true; stack.push(nxt); }
+      });
+    }
+    return seen;
+  }
+  function sectionNodes(s) {
+    var set = {};
+    NODES.forEach(function (n) {
+      if (s === "base") { if (n.layer === "base" || n.layer === "root") set[n.id] = true; }
+      else if (n.cols.indexOf(s) >= 0) set[n.id] = true;
+    });
+    return set;
+  }
+
+  /* ---------- state ---------- */
+  var state = { section: null, node: null, presenting: false };
+
+  function paint() {
+    var on = null, up = null, down = null;
+    if (state.node) {
+      up = reach(state.node, -1); down = reach(state.node, 1);
+      on = {}; on[state.node] = true;
+      for (var a in up) on[a] = true;
+      for (var b in down) on[b] = true;
+    } else if (state.section) on = sectionNodes(state.section);
+    svg.setAttribute("class", on ? "has-sel" : "");
+    NODES.forEach(function (n) {
+      nodeEls[n.id].setAttribute("class", "node " + n.layer + (on && on[n.id] ? " on" : "") + (state.node === n.id ? " sel" : ""));
+    });
+    edgeEls.forEach(function (x) {
+      var e = x.e, cls = "";
+      if (state.node) {
+        var inUp = (up[e.f] || e.f === state.node) && (up[e.t] || e.t === state.node) && e.f !== state.node;
+        var inDown = (down[e.f] || e.f === state.node) && (down[e.t] || e.t === state.node) && e.t !== state.node;
+        if (inUp || inDown) cls = " on";
+        if (e.f === state.node || e.t === state.node) cls = " on direct";
+      } else if (on && on[e.f] && on[e.t]) cls = " on";
+      x.path.setAttribute("class", "edge" + cls);
+      x.head.setAttribute("class", "head" + cls);
+    });
+    COLS.forEach(function (c) {
+      var act = state.section === c.id;
+      frameEls[c.id].setAttribute("class", "col-frame" + (act ? " on" : ""));
+      frameEls[c.id].setAttribute("style", act ? "stroke:var(--c-" + c.id + ")" : "");
+      headEls[c.id].setAttribute("class", "col-head" + (act ? " on" : ""));
+    });
+    document.getElementById("tab-all").setAttribute("aria-pressed", !state.section && !state.node ? "true" : "false");
+    SEC_ORDER.forEach(function (s) { document.getElementById("tab-" + s).setAttribute("aria-pressed", state.section === s ? "true" : "false"); });
+    renderPanel();
+  }
+
+  function seq() { return state.section ? SECTIONS[state.section].seq : ALL; }
+
+  function renderPanel() {
+    var h = "";
+    if (state.node) {
+      var n = byId[state.node], s = seq(), idx = s.indexOf(n.id);
+      var ins = EDGES.filter(function (e) { return e.t === n.id; }), outs = EDGES.filter(function (e) { return e.f === n.id; });
+      var secName = state.section ? SECTIONS[state.section].ko : "전체";
+      var secColor = state.section ? SECTIONS[state.section].color : "var(--muted)";
+      h += '<div class="eyebrow"><span class="dot" style="background:' + secColor + '"></span>' + esc(secName) + (idx >= 0 ? " · " + (idx + 1) + " / " + s.length : "") + "</div>";
+      h += "<h2>" + esc(n.ko) + '</h2><div class="en-name">' + esc(n.en) + "</div>";
+      if (n.impl) h += '<div class="impl">' + esc(n.impl) + "</div>";
+      h += '<p class="lead">' + esc(n.sum) + "</p>";
+      if (ins.length) {
+        h += "<h3>이전 노드에서 이어받은 것</h3><ul class=\"inlist\">";
+        ins.forEach(function (e) {
+          var f = byId[e.f];
+          h += '<li class="incard"><div class="from"><button class="linkbtn" data-node="' + f.id + '">' + esc(f.ko) + "</button> " + esc(f.en) + " 에서</div>" +
+            '<div class="carry">' + esc(e.carry) + '</div><div class="why">' + esc(e.why) + "</div></li>";
+        });
+        h += "</ul>";
+      } else h += "<h3>출발점</h3><p>이 다이어그램의 뿌리입니다. 위의 모든 것이 여기서 시작합니다.</p>";
+      if (outs.length) {
+        h += "<h3>다음으로 넘기는 키워드</h3><ul class=\"outlist\">";
+        outs.forEach(function (e) {
+          var t = byId[e.t];
+          h += '<li class="outitem"><span class="key">' + esc(e.key) + '</span><span class="to">→ <button class="linkbtn" data-node="' + t.id + '">' + esc(t.ko) + "</button> " + esc(t.en) + "</span></li>";
+        });
+        h += "</ul>";
+      } else h += "<h3>도착점</h3><p>네 기둥의 흐름이 모두 여기로 모입니다.</p>";
+      h += '<div class="nav"><button class="btn" id="prev"' + (idx <= 0 ? " disabled" : "") + '>← 이전</button>' +
+        '<button class="btn primary" id="next"' + (idx < 0 || idx >= s.length - 1 ? " disabled" : "") + ">다음 →</button>" +
+        '<button class="btn" id="back">' + (state.section ? esc(secName) + " 흐름 보기" : "전체 보기") + "</button></div>";
+    } else if (state.section) {
+      var S = SECTIONS[state.section];
+      h += '<div class="eyebrow"><span class="dot" style="background:' + S.color + '"></span>섹션</div>';
+      h += "<h2>" + esc(S.ko) + '</h2><p class="lead">' + esc(S.desc) + "</p>";
+      h += "<h3>이 섹션의 흐름 (아래에서 위로)</h3><ol class=\"flow\">";
+      S.seq.forEach(function (id, k) {
+        var m = byId[id];
+        h += '<li><button data-node="' + id + '"><span class="n">' + (k + 1) + '</span><span class="k">' + esc(m.ko) + '</span><span class="e">' + esc(m.en) + "</span></button></li>";
+      });
+      h += '</ol><div class="nav"><button class="btn primary" id="start">이 섹션 발표 시작 →</button><button class="btn" id="back">전체 보기</button></div>';
+    } else {
+      h += '<div class="eyebrow">전체 보기</div><h2>LLM의 성질에서 범용 에이전트까지</h2>';
+      h += '<p class="lead">맨 아래 LLM에서 출발해, 아래 것이 위 것의 재료가 되는 순서로 읽습니다. 네 기둥은 각 요소가 주로 하는 일이고, 경계에 걸친 요소는 양쪽에 속합니다.</p>';
+      h += "<h3>보는 방법</h3><ul class=\"how\"><li>기둥 이름이나 위쪽 탭을 누르면 그 기둥에 속하거나 걸친 요소만 남습니다.</li>" +
+        "<li>요소를 누르면 그 요소로 이어지는 경로와 거기서 뻗어 나가는 경로만 남고, 설명이 여기에 나옵니다.</li>" +
+        "<li>← → 키로 순서대로 넘기고, Esc로 전체 보기로 돌아옵니다.</li></ul>";
+      h += "<h3>섹션</h3><ol class=\"flow\">";
+      SEC_ORDER.forEach(function (s, k) {
+        h += '<li><button data-section="' + s + '"><span class="n">' + (k + 1) + '</span><span class="k">' + esc(SECTIONS[s].ko) + '</span><span class="e">' + SECTIONS[s].seq.length + "개 요소</span></button></li>";
+      });
+      h += '</ol><div class="nav"><button class="btn primary" id="start">처음부터 발표 시작 →</button></div>';
+      h += '<p class="note">화살표는 시간 순서가 아니라 재료 관계입니다. 아래 것이 위 것의 재료가 된다는 뜻이며, 나온 시기는 반대인 경우도 있습니다. 연결선은 설명을 위한 해석이라 문헌에서 확인되는 계승 관계와 다를 수 있습니다.</p>';
+    }
+    panel.innerHTML = h;
+    panel.scrollTop = 0;
+    Array.prototype.forEach.call(panel.querySelectorAll("[data-node]"), function (b) {
+      b.addEventListener("click", function () { selectNode(b.getAttribute("data-node"), true); });
+    });
+    Array.prototype.forEach.call(panel.querySelectorAll("[data-section]"), function (b) {
+      b.addEventListener("click", function () { selectSection(b.getAttribute("data-section")); });
+    });
+    var st = document.getElementById("start"); if (st) st.addEventListener("click", function () { selectNode(seq()[0], true); });
+    var pv = document.getElementById("prev"); if (pv) pv.addEventListener("click", function () { step(-1); });
+    var nx = document.getElementById("next"); if (nx) nx.addEventListener("click", function () { step(1); });
+    var bk = document.getElementById("back"); if (bk) bk.addEventListener("click", function () { if (state.node && state.section) { state.node = null; paint(); } else clearSel(); });
+  }
+
+  function selectSection(s) { state.section = s; state.node = null; paint(); }
+  function selectNode(id, keepSection) {
+    if (state.section && SECTIONS[state.section].seq.indexOf(id) < 0) state.section = null;
+    state.node = id; paint();
+  }
+  function clearSel() { state.section = null; state.node = null; paint(); }
+  function step(d) {
+    var s = seq();
+    if (!state.node) { if (d > 0) selectNode(s[0], true); return; }
+    var idx = s.indexOf(state.node), nxt = idx + d;
+    if (idx < 0 || nxt < 0 || nxt >= s.length) return;
+    state.node = s[nxt]; paint();
+  }
+  document.addEventListener("keydown", function (ev) {
+    if (ev.target && /^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName)) return;
+    if (ev.key === "ArrowRight") { ev.preventDefault(); step(1); }
+    else if (ev.key === "ArrowLeft") { ev.preventDefault(); step(-1); }
+    else if (ev.key === "Escape") { if (state.node && state.section) { state.node = null; paint(); } else clearSel(); }
+  });
+  paint();
+})();
+</script>

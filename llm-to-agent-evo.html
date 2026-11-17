@@ -1,0 +1,476 @@
+<title>LLM to Agent Evolution</title>
+<meta name="claude:viewport-fit-sides" content="true">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #ffffff;
+    --ink: #1f2933;
+    --muted: #6b7682;
+    --line: #dfe4ea;
+    --edge: #a9b3bf;
+    --yellow: #fff1a8;  --yellow-b: #e6c84a;
+    --blue: #cfe4ff;    --blue-b: #7fb0ee;
+    --pink: #ffd0d4;    --pink-b: #ef8f98;
+    --green: #cdf0d0;   --green-b: #79c583;
+    --prev: #2f6fde;
+    --next: #e0553d;
+  }
+  /* 사용자 요청으로 어두운 테마에서도 흰 배경을 유지합니다. */
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #ffffff; --ink: #1f2933; } }
+  :root[data-theme="dark"] { --bg: #ffffff; --ink: #1f2933; }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; margin: 0; background: var(--bg); color: var(--ink); font-family: "IBM Plex Sans KR", system-ui, sans-serif; }
+  header { padding: 20px max(16px, env(safe-area-inset-left)) 10px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; }
+  h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  header p { margin: 0; color: var(--muted); font-size: 14px; }
+  .bar { padding: 0 16px 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; font-size: 13px; color: var(--muted); }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+  .sw { display: inline-flex; align-items: center; gap: 6px; }
+  .sw i { width: 18px; height: 12px; border-radius: 3px; border: 1.5px solid; display: inline-block; }
+  .sw .ln { width: 22px; height: 0; border: 0; border-top: 2.5px solid; border-radius: 0; }
+  .sw .ln.dash { border-top-style: dashed; }
+  .zoom { margin-left: auto; display: flex; gap: 6px; }
+  button { font: inherit; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 5px 11px; cursor: pointer; }
+  button:hover { background: #f4f6f8; }
+  button:focus-visible { outline: 2px solid var(--prev); outline-offset: 2px; }
+  .node:focus { outline: none; }
+  .node:focus-visible rect { stroke: var(--ink); stroke-width: 3; }
+  .info { margin: 0 16px 10px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 10px; min-height: 46px; font-size: 14px; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+  .info b { font-weight: 600; }
+  .info .lab { color: var(--muted); font-size: 12px; margin-left: 8px; }
+  .chip { border: 1.5px solid; border-radius: 999px; padding: 2px 10px; font-size: 13px; background: #fff; cursor: pointer; }
+  .chip.s { border-color: var(--ink); color: var(--ink); font-weight: 600; }
+  .chip.p { border-color: var(--prev); color: var(--prev); }
+  .chip.n { border-color: var(--next); color: var(--next); }
+  .wrap { border: 1px solid var(--line); border-radius: 12px; overflow: auto; flex: 1 1 0; min-width: 0; min-height: 0; background: #fff; cursor: grab; }
+  .wrap.drag { cursor: grabbing; }
+  svg { display: block; }
+  .edge path { fill: none; stroke: var(--edge); stroke-width: 2; }
+  .edge polygon { fill: var(--edge); }
+  .edge.dash path { stroke-dasharray: 7 6; }
+  .edge text { font-size: 13px; fill: var(--muted); paint-order: stroke; stroke: #fff; stroke-width: 4px; }
+  .node { cursor: pointer; }
+  .node rect { stroke-width: 2; }
+  .node text { font-size: 16px; fill: var(--ink); text-anchor: middle; pointer-events: none; }
+  .node .sub { font-size: 13px; fill: #4a5561; }
+  .node.yellow rect { fill: var(--yellow); stroke: var(--yellow-b); }
+  .node.blue rect { fill: var(--blue); stroke: var(--blue-b); }
+  .node.pink rect { fill: var(--pink); stroke: var(--pink-b); }
+  .node.green rect { fill: var(--green); stroke: var(--green-b); }
+  .node:hover rect { stroke-width: 3; }
+  svg.sel .node { opacity: 0.3; transition: opacity .15s; }
+  svg.sel .edge { opacity: 0.18; transition: opacity .15s; }
+  svg.sel .node.on, svg.sel .edge.on { opacity: 1; }
+  svg.sel .node.me rect { stroke: var(--ink); stroke-width: 3.5; }
+  svg.sel .node.prev rect { stroke: var(--prev); stroke-width: 3; }
+  svg.sel .node.next rect { stroke: var(--next); stroke-width: 3; }
+  svg.sel .edge.in path { stroke: var(--prev); stroke-width: 3; }
+  svg.sel .edge.in polygon { fill: var(--prev); }
+  svg.sel .edge.out path { stroke: var(--next); stroke-width: 3; }
+  svg.sel .edge.out polygon { fill: var(--next); }
+  .stage { display: flex; gap: 12px; flex: 1 1 0; min-height: 320px; margin: 0 16px 16px; }
+  .side { flex: 0 0 320px; overflow: auto; display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: #fff; font-size: 14px; line-height: 1.5; position: relative; }
+  .side[hidden] { display: none; }
+  .card { flex: 0 0 auto; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px 14px; background: #fff; }
+  .card h2 { margin: 0; font-size: 16px; font-weight: 600; display: flex; align-items: baseline; gap: 8px; }
+  .card h2::before { content: ""; flex: 0 0 auto; width: 10px; height: 10px; border-radius: 50%; background: var(--line); transform: translateY(-1px); }
+  .card.yellow h2::before { background: var(--yellow-b); }
+  .card.blue h2::before { background: var(--blue-b); }
+  .card.pink h2::before { background: var(--pink-b); }
+  .card.green h2::before { background: var(--green-b); }
+  .card p { margin: 6px 0 0; white-space: pre-line; }
+  .card .empty { color: #a3acb6; }
+  #sideBtn[aria-pressed="true"] { background: #f1f3f5; }
+  @media (max-width: 760px) { .stage { flex-direction: column; } .side { flex: 0 0 42%; } }
+  @media (prefers-reduced-motion: reduce) { svg.sel .node, svg.sel .edge { transition: none; } }
+</style>
+
+<header>
+  <h1>LLM에서 에이전트까지</h1></header>
+
+<div class="bar">
+  <div class="legend">
+    <span class="sw"><i style="background:var(--yellow);border-color:var(--yellow-b)"></i>Agent component</span>
+    <span class="sw"><i style="background:var(--blue);border-color:var(--blue-b)"></i>Technique / concept</span>
+    <span class="sw"><i style="background:var(--pink);border-color:var(--pink-b)"></i>Limit</span>
+    <span class="sw"><i style="background:var(--green);border-color:var(--green-b)"></i>Response to a limit</span>
+    <span class="sw"><i class="ln dash" style="border-color:var(--edge)"></i>한계의 원인</span>
+    <span class="sw"><i class="ln" style="border-color:var(--prev)"></i>이전</span>
+    <span class="sw"><i class="ln" style="border-color:var(--next)"></i>다음</span>
+  </div>
+  <div class="zoom">
+    <button id="zout" aria-label="축소">−</button>
+    <button id="zin" aria-label="확대">+</button>
+    <button id="zfit">전체 보기</button>
+    <button id="clear">선택 해제</button>
+    <button id="sideBtn" aria-pressed="true">설명 패널</button>
+  </div>
+</div>
+
+<div class="info" id="info" aria-live="polite"></div>
+<div class="stage">
+  <div class="wrap" id="wrap"><svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg></div>
+  <aside class="side" id="side" aria-label="선택한 노드 설명" hidden></aside>
+</div>
+
+<script>
+(function () {
+  const NODES=[{"id": "mwjykt85-0wb2z", "x": 1605, "y": 129, "w": 200, "h": 96, "c": "blue", "k": "rect", "t": "In-context learning"}, {"id": "mwjyn9wl-1hmgr", "x": 1927, "y": 545, "w": 200, "h": 96, "c": "blue", "k": "rect", "t": "Structured output"}, {"id": "mwjy13yr-1y3l3", "x": 2558, "y": 103, "w": 200, "h": 96, "c": "blue", "k": "rect", "t": "RAG"}, {"id": "e25", "x": 4120, "y": 1123, "w": 200, "h": 96, "c": "green", "k": "rect", "t": "Enforce deterministic control"}, {"id": "e33", "x": 4494, "y": 1322, "w": 200, "h": 96, "c": "blue", "k": "rect", "t": "Permission\nHuman approval"}, {"id": "e44", "x": 4552, "y": -250, "w": 200, "h": 96, "c": "blue", "k": "rect", "t": "Sub-agents\nMulti-agent"}, {"id": "mwjy3xah-28k0v", "x": 774, "y": 694, "w": 200, "h": 96, "c": "green", "k": "rect", "t": "Deep into query"}, {"id": "mwjxyspb-1p0l4", "x": 457, "y": 503, "w": 200, "h": 96, "c": "pink", "k": "rect", "t": "Limit: Hallucination"}, {"id": "mwjz4wb3-207i0", "x": 2218, "y": 913, "w": 200, "h": 96, "c": "blue", "k": "rect", "t": "Prompt chaining"}, {"id": "mwjz48wn-1u5il", "x": 774, "y": 913, "w": 200, "h": 96, "c": "green", "k": "rect", "t": "Break down task into small tasks"}, {"id": "mwjyix9o-0pluh", "x": 1124, "y": 8, "w": 180, "h": 64, "c": "blue", "k": "rect", "t": "Scaling"}, {"id": "mwjy2sm9-22p1i", "x": 774, "y": 407, "w": 200, "h": 96, "c": "green", "k": "rect", "t": "Enrich knowledge,\ngive more context"}, {"id": "mwjxz6hj-1rh6r", "x": 457, "y": 311, "w": 200, "h": 96, "c": "pink", "k": "rect", "t": "Limit: knowledge limitation"}, {"id": "mwjxxubs-15e8q", "x": 34, "y": 166, "w": 180, "h": 64, "c": "blue", "k": "rect", "t": "Pre-training"}, {"id": "e24", "x": 3800, "y": 1123, "w": 200, "h": 96, "c": "pink", "k": "rect", "t": "Limit: Non-deterministic behavior"}, {"id": "mwjxwork-05vok", "x": 24, "y": 285, "w": 200, "h": 96, "c": "blue", "k": "rect", "t": "Next token prediction"}, {"id": "mwk0b4wu-1do33", "x": 2558, "y": 274, "w": 200, "h": 96, "c": "yellow", "k": "pill", "t": "Planning"}, {"id": "e8", "x": 3800, "y": 637, "w": 200, "h": 96, "c": "blue", "k": "rect", "t": "Computer Use"}, {"id": "mwjz8n8c-2nzsh", "x": 3800, "y": -250, "w": 200, "h": 96, "c": "pink", "k": "rect", "t": "Limit: Context window"}, {"id": "mwjynw0i-1najs", "x": 2558, "y": 454, "w": 200, "h": 96, "c": "blue", "k": "rect", "t": "ReAct - Reason and Act"}, {"id": "e39", "x": 4552, "y": 133, "w": 200, "h": 96, "c": "green", "k": "rect", "t": "Keep working until the goal is met"}, {"id": "mwjy4shv-2agud", "x": 1605, "y": 276, "w": 200, "h": 96, "c": "blue", "k": "rect", "t": "Chain-of-Thought"}, {"id": "mwk09zhu-19vjd", "x": 5353, "y": 446, "w": 180, "h": 64, "c": "yellow", "k": "pill", "t": "General purpose agents"}, {"id": "mwk03nod-0mzqw", "x": 4193, "y": -119, "w": 200, "h": 96, "c": "blue", "k": "rect", "t": "Context engineering"}, {"id": "mwjyjr9p-0th2v", "x": 1605, "y": -8, "w": 200, "h": 96, "c": "blue", "k": "rect", "t": "Instruction following"}, {"id": "mwjxwa1y-01ty8", "x": -284, "y": 6, "w": 180, "h": 64, "c": "yellow", "k": "pill", "t": "LLM"}, {"id": "e22", "x": 2878, "y": 347, "w": 200, "h": 96, "c": "yellow", "k": "pill", "t": "Internal memory\nAgent trajectory"}, {"id": "mwjy8wog-0f96a", "x": 1129, "y": 545, "w": 200, "h": 96, "c": "blue", "k": "rect", "t": "Fine-tuning"}, {"id": "mwk068s5-0wxfu", "x": 3800, "y": 517, "w": 200, "h": 96, "c": "blue", "k": "rect", "t": "Agent Skills"}, {"id": "e38", "x": 4193, "y": 133, "w": 200, "h": 96, "c": "pink", "k": "rect", "t": "Limit: Stops before the task is done"}, {"id": "mwk03ffa-0ks1a", "x": 4193, "y": -250, "w": 200, "h": 96, "c": "green", "k": "rect", "t": "Manage input prompt"}, {"id": "e9", "x": 4910, "y": 258, "w": 200, "h": 96, "c": "blue", "k": "rect", "t": "Goal\nRalph Loop"}, {"id": "mwjymvvz-1d2vd", "x": 1439, "y": 545, "w": 200, "h": 96, "c": "blue", "k": "rect", "t": "Instruction tuning"}, {"id": "mwjz7zuq-2c3z2", "x": 34, "y": 6, "w": 180, "h": 64, "c": "blue", "k": "rect", "t": "Transformer"}, {"id": "mwjxx3ut-0dk24", "x": 24, "y": 461, "w": 200, "h": 96, "c": "blue", "k": "rect", "t": "Text generation"}, {"id": "mwjz5h1e-2824t", "x": 1927, "y": -8, "w": 200, "h": 96, "c": "blue", "k": "rect", "t": "Prompt engineering"}, {"id": "mwk00wip-0bwb9", "x": 2878, "y": 103, "w": 200, "h": 96, "c": "yellow", "k": "pill", "t": "External memory"}, {"id": "e7", "x": 4494, "y": 932, "w": 200, "h": 96, "c": "blue", "k": "rect", "t": "Sandbox"}, {"id": "mwk09djm-143t1", "x": 4494, "y": 1123, "w": 200, "h": 96, "c": "blue", "k": "rect", "t": "Hook"}, {"id": "e31", "x": 4120, "y": 932, "w": 200, "h": 96, "c": "green", "k": "rect", "t": "Restrict execution environment"}, {"id": "mwjxye6q-1i6kc", "x": 296, "y": 150, "w": 200, "h": 96, "c": "blue", "k": "rect", "t": "Training dataset"}, {"id": "mwjynhq1-1jdr6", "x": 2558, "y": 608, "w": 200, "h": 96, "c": "yellow", "k": "pill", "t": "Tool use"}, {"id": "e47", "x": 1927, "y": 276, "w": 200, "h": 96, "c": "blue", "k": "rect", "t": "Reasoning model"}, {"id": "mwjzmk38-025uz", "x": 3371, "y": 144, "w": 200, "h": 96, "c": "yellow", "k": "pill", "t": "Agent loop"}, {"id": "mwk05ygz-0sozz", "x": 3800, "y": 764, "w": 200, "h": 96, "c": "blue", "k": "rect", "t": "MCP"}, {"id": "e1", "x": 457, "y": 694, "w": 200, "h": 96, "c": "pink", "k": "rect", "t": "Limit: Multi-step reasoning"}];
+const EDGES=[{"f": "mwjxwork-05vok", "t": "mwjxyspb-1p0l4", "fs": "right", "ts": "top", "b": ["h", 287, -127], "d": 1, "l": "Causes"}, {"f": "mwjy2sm9-22p1i", "t": "mwjy13yr-1y3l3", "fs": "right", "ts": "left", "b": ["h", 1307]}, {"f": "mwjy4shv-2agud", "t": "e47", "fs": "right", "ts": "left"}, {"f": "mwjxxubs-15e8q", "t": "mwjxwork-05vok", "fs": "bottom", "ts": "top"}, {"f": "mwjxx3ut-0dk24", "t": "e1", "fs": "right", "ts": "left"}, {"f": "mwjz7zuq-2c3z2", "t": "mwjxxubs-15e8q", "fs": "bottom", "ts": "top"}, {"f": "e8", "t": "mwk09zhu-19vjd", "fs": "right", "ts": "left", "b": ["h", 805]}, {"f": "mwjxyspb-1p0l4", "t": "mwjy2sm9-22p1i", "fs": "right", "ts": "left"}, {"f": "mwjxxubs-15e8q", "t": "mwjxye6q-1i6kc", "fs": "right", "ts": "left"}, {"f": "mwjz5h1e-2824t", "t": "mwjz4wb3-207i0", "fs": "right", "ts": "left"}, {"f": "mwjynhq1-1jdr6", "t": "mwjynw0i-1najs", "fs": "top", "ts": "bottom"}, {"f": "mwjynw0i-1najs", "t": "mwjzmk38-025uz", "fs": "right", "b": ["h", 574]}, {"f": "mwk00wip-0bwb9", "t": "mwjzmk38-025uz"}, {"f": "mwjxx3ut-0dk24", "t": "e24", "b": ["v"], "d": 1, "l": "Causes"}, {"f": "mwjxx3ut-0dk24", "t": "mwjyn9wl-1hmgr", "fs": "bottom", "ts": "bottom", "b": ["v", 391]}, {"f": "e31", "t": "e7", "fs": "right", "ts": "left"}, {"f": "mwjz4wb3-207i0", "t": "e22", "fs": "right", "ts": "left", "b": ["h", 489]}, {"f": "mwk03ffa-0ks1a", "t": "e44", "fs": "right", "ts": "left"}, {"f": "e7", "t": "mwk09zhu-19vjd", "b": ["h", 161]}, {"f": "mwjyn9wl-1hmgr", "t": "mwjynhq1-1jdr6", "fs": "right", "ts": "left"}, {"f": "e24", "t": "e31", "fs": "right", "ts": "left"}, {"f": "mwjy13yr-1y3l3", "t": "mwk00wip-0bwb9", "fs": "right"}, {"f": "mwjxwa1y-01ty8", "t": "mwjz7zuq-2c3z2", "fs": "right"}, {"f": "e39", "t": "e9", "fs": "right", "ts": "left"}, {"f": "mwjyix9o-0pluh", "t": "mwjykt85-0wb2z", "fs": "right", "ts": "left"}, {"f": "mwjxz6hj-1rh6r", "t": "mwjy2sm9-22p1i", "fs": "right", "ts": "left"}, {"f": "mwjzmk38-025uz", "t": "mwk09zhu-19vjd", "fs": "right", "ts": "left", "b": ["h", 544]}, {"f": "mwjy3xah-28k0v", "t": "mwjy4shv-2agud", "fs": "right", "ts": "left", "b": ["h", 489]}, {"f": "mwjykt85-0wb2z", "t": "mwjz5h1e-2824t", "fs": "right", "ts": "left", "b": ["v", 84, -447]}, {"f": "mwjy4shv-2agud", "t": "mwjynw0i-1najs", "fs": "right", "b": ["h", 166]}, {"f": "mwjynw0i-1najs", "t": "e22", "fs": "right", "ts": "left", "b": ["h", 137]}, {"f": "e33", "t": "mwk09zhu-19vjd", "fs": "right", "ts": "left"}, {"f": "mwjz48wn-1u5il", "t": "mwjz4wb3-207i0", "fs": "right", "b": ["v", 80]}, {"f": "e25", "t": "e33", "fs": "right", "ts": "left"}, {"f": "e1", "t": "mwjy3xah-28k0v", "fs": "right", "ts": "left"}, {"f": "mwjyix9o-0pluh", "t": "mwjyjr9p-0th2v", "fs": "right", "ts": "left"}, {"f": "mwjy8wog-0f96a", "t": "mwjymvvz-1d2vd", "fs": "right", "ts": "left"}, {"f": "mwjz8n8c-2nzsh", "t": "mwk03ffa-0ks1a", "fs": "right"}, {"f": "mwjynhq1-1jdr6", "t": "mwjzmk38-025uz", "fs": "right", "ts": "left", "b": ["h", 599]}, {"f": "mwk05ygz-0sozz", "t": "mwk09zhu-19vjd", "fs": "right", "ts": "left", "b": ["h", 829]}, {"f": "mwjxx3ut-0dk24", "t": "mwjxz6hj-1rh6r", "fs": "right", "ts": "left"}, {"f": "mwk09djm-143t1", "t": "e9", "b": ["h", 243]}, {"f": "mwk0b4wu-1do33", "t": "mwjzmk38-025uz", "fs": "right", "ts": "left", "b": ["h", 544]}, {"f": "mwk068s5-0wxfu", "t": "mwk03nod-0mzqw", "fs": "right", "ts": "left"}, {"f": "e1", "t": "mwjz48wn-1u5il", "fs": "right", "ts": "left"}, {"f": "e22", "t": "mwjzmk38-025uz", "fs": "right", "ts": "left", "b": ["h", 238]}, {"f": "mwjzmk38-025uz", "t": "e38", "fs": "right", "ts": "left", "d": 1}, {"f": "mwjy2sm9-22p1i", "t": "mwjy8wog-0f96a", "fs": "right", "ts": "left", "b": ["h", 183]}, {"f": "mwjz4wb3-207i0", "t": "mwk0b4wu-1do33", "fs": "right", "ts": "left"}, {"f": "mwjzmk38-025uz", "t": "mwjz8n8c-2nzsh", "fs": "right", "ts": "left", "d": 1}, {"f": "mwk03nod-0mzqw", "t": "mwk09zhu-19vjd", "b": ["h", 937]}, {"f": "mwjz7zuq-2c3z2", "t": "mwjz8n8c-2nzsh", "fs": "top", "ts": "left", "b": ["h", -145, -280, -127], "d": 1, "l": "Structural limit"}, {"f": "mwjxx3ut-0dk24", "t": "mwjxyspb-1p0l4", "fs": "right", "ts": "left"}, {"f": "e9", "t": "mwk09zhu-19vjd", "b": ["h", 165]}, {"f": "mwjxwork-05vok", "t": "mwjxx3ut-0dk24", "fs": "bottom", "ts": "top"}, {"f": "e38", "t": "e39", "fs": "right", "ts": "left"}, {"f": "mwk09djm-143t1", "t": "mwk09zhu-19vjd", "b": ["h", 180]}, {"f": "mwjz5h1e-2824t", "t": "mwk068s5-0wxfu", "fs": "right", "ts": "top", "b": ["h", 1962]}, {"f": "mwjxye6q-1i6kc", "t": "mwjxz6hj-1rh6r", "fs": "right", "d": 1, "l": "Causes"}, {"f": "mwk05ygz-0sozz", "t": "mwk03nod-0mzqw", "fs": "right", "ts": "left"}, {"f": "mwjz5h1e-2824t", "t": "mwk03nod-0mzqw", "fs": "right", "b": ["v", 126, -572]}, {"f": "e25", "t": "mwk09djm-143t1", "fs": "right", "ts": "left"}, {"f": "mwjynhq1-1jdr6", "t": "mwk068s5-0wxfu", "fs": "right", "b": ["h", 682]}, {"f": "mwk03ffa-0ks1a", "t": "mwk03nod-0mzqw", "fs": "bottom", "ts": "top"}, {"f": "mwjykt85-0wb2z", "t": "mwjy13yr-1y3l3", "fs": "right", "ts": "left"}, {"f": "e47", "t": "mwk0b4wu-1do33", "fs": "right", "ts": "left"}, {"f": "e44", "t": "mwk09zhu-19vjd", "fs": "right", "ts": "left", "b": ["h", 592]}, {"f": "mwjyjr9p-0th2v", "t": "mwjz5h1e-2824t", "fs": "right", "ts": "left", "b": ["v", 91, -509]}, {"f": "mwjynhq1-1jdr6", "t": "e8", "fs": "right", "ts": "left", "b": ["h", 602]}, {"f": "mwjyix9o-0pluh", "t": "mwjy4shv-2agud", "fs": "right", "ts": "left", "b": ["h", 403, -62]}, {"f": "mwjz7zuq-2c3z2", "t": "mwjyix9o-0pluh", "fs": "right"}, {"f": "mwjymvvz-1d2vd", "t": "mwjyn9wl-1hmgr", "fs": "right", "ts": "left"}, {"f": "mwjynhq1-1jdr6", "t": "mwk05ygz-0sozz", "fs": "right", "ts": "left", "b": ["h", 572]}, {"f": "e24", "t": "e25", "fs": "right", "ts": "left"}, {"f": "mwjzmk38-025uz", "t": "e24", "fs": "right", "ts": "left", "d": 1}, {"f": "mwjymvvz-1d2vd", "t": "mwjyjr9p-0th2v", "fs": "top", "ts": "left", "b": ["v", -276, 17, 75]}, {"f": "mwjxwa1y-01ty8", "t": "mwjzmk38-025uz", "b": ["v", -560, -140]}];
+  const NS = "http://www.w3.org/2000/svg";
+  const byId = {}; NODES.forEach(n => byId[n.id] = n);
+
+  const svg = document.getElementById("svg"), wrap = document.getElementById("wrap"), info = document.getElementById("info");
+  const el = (t, a, p) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; };
+  const cx = n => n.x + n.w / 2, cy = n => n.y + n.h / 2;
+
+  // ── 선 배치: 격자 위에서 노드를 피해 가는 직각 경로를 찾습니다. ──
+  // 다른 선과 같은 길을 겹쳐 가면 큰 벌점, 가로질러 가면 작은 벌점을 줍니다.
+  const G = 16, MARGIN = 14, TURN = 56, OVER = 9 * G, CROSS = 0.6 * G, SIDEPEN = 40;
+  const DX = [1, 0, -1, 0], DY = [0, 1, 0, -1];   // 0 오른쪽, 1 아래, 2 왼쪽, 3 위
+  let gx0, gy0, cols, rows, blocked, occH, occV, gScore, parent;
+  const ccx = i => gx0 + (i + 0.5) * G, ccy = j => gy0 + (j + 0.5) * G;
+
+  function buildGrid() {
+    let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity;
+    NODES.forEach(n => { a = Math.min(a, n.x); b = Math.min(b, n.y); c = Math.max(c, n.x + n.w); d = Math.max(d, n.y + n.h); });
+    gx0 = Math.floor((a - 160) / G) * G; gy0 = Math.floor((b - 160) / G) * G;
+    cols = Math.ceil((c + 160 - gx0) / G); rows = Math.ceil((d + 160 - gy0) / G);
+    const N = cols * rows;
+    blocked = new Uint8Array(N); occH = new Uint8Array(N); occV = new Uint8Array(N);
+    gScore = new Float32Array(N * 4); parent = new Int32Array(N * 4);
+    NODES.forEach(n => {
+      const i0 = Math.max(0, Math.floor((n.x - MARGIN - gx0) / G) - 1), i1 = Math.min(cols - 1, Math.ceil((n.x + n.w + MARGIN - gx0) / G));
+      const j0 = Math.max(0, Math.floor((n.y - MARGIN - gy0) / G) - 1), j1 = Math.min(rows - 1, Math.ceil((n.y + n.h + MARGIN - gy0) / G));
+      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+        const x = ccx(i), y = ccy(j);
+        if (x > n.x - MARGIN && x < n.x + n.w + MARGIN && y > n.y - MARGIN && y < n.y + n.h + MARGIN) blocked[j * cols + i] = 1;
+      }
+    });
+  }
+
+  // 노드의 한 변에서 선이 드나들 수 있는 자리들
+  function ports(n, pref) {
+    const out = [], pill = n.k === "pill";
+    const insX = pill ? n.h / 2 : 18, insY = pill ? Math.max(8, n.h / 2 - G) : 14;
+    const add = (i, j, dir, bx, by, side, off) => {
+      if (i < 0 || j < 0 || i >= cols || j >= rows || blocked[j * cols + i]) return;
+      out.push({ c: j * cols + i, dir, bx, by, pen: (pref && pref !== side ? SIDEPEN : 0) + Math.abs(off) * 0.12 });
+    };
+    const jt = Math.floor((n.y - MARGIN - gy0) / G - 0.5), jb = Math.ceil((n.y + n.h + MARGIN - gy0) / G - 0.5);
+    const il = Math.floor((n.x - MARGIN - gx0) / G - 0.5), ir = Math.ceil((n.x + n.w + MARGIN - gx0) / G - 0.5);
+    for (let i = 0; i < cols; i++) {
+      const x = ccx(i); if (x < n.x + insX || x > n.x + n.w - insX) continue;
+      add(i, jt, 3, x, n.y, "top", x - cx(n)); add(i, jb, 1, x, n.y + n.h, "bottom", x - cx(n));
+    }
+    for (let j = 0; j < rows; j++) {
+      const y = ccy(j); if (y < n.y + insY || y > n.y + n.h - insY) continue;
+      add(il, j, 2, n.x, y, "left", y - cy(n)); add(ir, j, 0, n.x + n.w, y, "right", y - cy(n));
+    }
+    return out;
+  }
+
+  // 작은 값이 먼저 나오는 힙
+  function Heap() { this.k = []; this.v = []; }
+  Heap.prototype.push = function (key, val) {
+    const k = this.k, v = this.v; let i = k.length; k.push(key); v.push(val);
+    while (i > 0) { const p = (i - 1) >> 1; if (k[p] <= key) break; k[i] = k[p]; v[i] = v[p]; i = p; }
+    k[i] = key; v[i] = val;
+  };
+  Heap.prototype.pop = function () {
+    const k = this.k, v = this.v, top = v[0], lk = k.pop(), lv = v.pop(), n = k.length;
+    if (n) { let i = 0; for (;;) { let c = 2 * i + 1; if (c >= n) break; if (c + 1 < n && k[c + 1] < k[c]) c++; if (k[c] >= lk) break; k[i] = k[c]; v[i] = v[c]; i = c; } k[i] = lk; v[i] = lv; }
+    return top;
+  };
+
+  function findPath(e) {
+    const a = byId[e.f], b = byId[e.t];
+    const starts = ports(a, e.fs), goals = new Map();
+    ports(b, e.ts).forEach(p => goals.set(p.c, p));
+    if (!starts.length || !goals.size) return null;
+    gScore.fill(Infinity); parent.fill(-1);
+    const heap = new Heap(), bx = cx(b), by = cy(b), slack = (b.w + b.h) / 2;
+    const h = c => Math.max(0, Math.abs(ccx(c % cols) - bx) + Math.abs(ccy((c / cols) | 0) - by) - slack);
+    const startOf = new Map();
+    starts.forEach(p => {
+      const s = p.c * 4 + p.dir, g = p.pen + ((p.dir & 1) ? occV[p.c] : occH[p.c]) * OVER;
+      if (g < gScore[s]) { gScore[s] = g; startOf.set(s, p); heap.push(g + h(p.c), s); }
+    });
+    let best = Infinity, bestS = -1, bestP = null;
+    while (heap.k.length) {
+      if (heap.k[0] >= best) break;
+      const fk = heap.k[0], s = heap.pop(), c = s >> 2, dir = s & 3, g = gScore[s];
+      if (fk > g + h(c) + 1e-3) continue;
+      const gp = goals.get(c);
+      if (gp && gp.dir === ((dir + 2) & 3)) { const tot = g + gp.pen; if (tot < best) { best = tot; bestS = s; bestP = gp; } }
+      const i = c % cols, j = (c / cols) | 0;
+      for (let nd = 0; nd < 4; nd++) {
+        if (nd === ((dir + 2) & 3)) continue;
+        const ni = i + DX[nd], nj = j + DY[nd];
+        if (ni < 0 || nj < 0 || ni >= cols || nj >= rows) continue;
+        const nc = nj * cols + ni; if (blocked[nc]) continue;
+        const ng = g + G + (nd !== dir ? TURN : 0) + ((nd & 1) ? occV[nc] * OVER + occH[nc] * CROSS : occH[nc] * OVER + occV[nc] * CROSS);
+        const ns = nc * 4 + nd;
+        if (ng < gScore[ns]) { gScore[ns] = ng; parent[ns] = s; heap.push(ng + h(nc), ns); }
+      }
+    }
+    if (bestS < 0) return null;
+    const states = []; for (let s = bestS; s >= 0; s = parent[s]) states.push(s);
+    states.reverse();
+    const sp = startOf.get(states[0]);
+    // 지나간 칸을 방향별로 기록해 다음 선이 같은 길을 피하게 합니다.
+    const mark = (c, d) => { const arr = (d & 1) ? occV : occH; if (arr[c] < 250) arr[c]++; };
+    mark(states[0] >> 2, sp.dir);
+    for (let q = 1; q < states.length; q++) { const d = states[q] & 3; mark(states[q - 1] >> 2, d); mark(states[q] >> 2, d); }
+    const pts = [[sp.bx, sp.by]];
+    states.forEach(s => { const c = s >> 2; pts.push([ccx(c % cols), ccy((c / cols) | 0)]); });
+    pts.push([bestP.bx, bestP.by]);
+    return pts;
+  }
+  function simplify(p) {
+    const o = [p[0]];
+    for (let i = 1; i < p.length; i++) {
+      const a = o[o.length - 1], b = p[i], c = p[i + 1];
+      if (Math.abs(a[0] - b[0]) < 0.5 && Math.abs(a[1] - b[1]) < 0.5) continue;
+      if (c && ((Math.abs(a[0] - b[0]) < 0.5 && Math.abs(b[0] - c[0]) < 0.5) || (Math.abs(a[1] - b[1]) < 0.5 && Math.abs(b[1] - c[1]) < 0.5))) continue;
+      o.push(b);
+    }
+    return o;
+  }
+  function straight(e) { const a = byId[e.f], b = byId[e.t]; return [[cx(a), cy(a)], [cx(b), cy(b)]]; }
+  function computeRoutes() {
+    const order = EDGES.map((e, i) => i).sort((p, q) => {
+      const d = e => Math.abs(cx(byId[e.f]) - cx(byId[e.t])) + Math.abs(cy(byId[e.f]) - cy(byId[e.t]));
+      return d(EDGES[p]) - d(EDGES[q]);
+    });
+    const out = new Array(EDGES.length);
+    order.forEach(i => { const p = findPath(EDGES[i]); out[i] = p ? simplify(p) : straight(EDGES[i]); });
+    return out;
+  }
+
+  function pathD(p, r) {
+    let d = "M" + p[0][0] + " " + p[0][1];
+    for (let i = 1; i < p.length - 1; i++) {
+      const a = p[i - 1], b = p[i], c = p[i + 1];
+      const l1 = Math.hypot(b[0] - a[0], b[1] - a[1]), l2 = Math.hypot(c[0] - b[0], c[1] - b[1]);
+      const rr = Math.min(r, l1 / 2, l2 / 2);
+      const p1 = [b[0] - (b[0] - a[0]) / l1 * rr, b[1] - (b[1] - a[1]) / l1 * rr];
+      const p2 = [b[0] + (c[0] - b[0]) / l2 * rr, b[1] + (c[1] - b[1]) / l2 * rr];
+      d += " L" + p1[0] + " " + p1[1] + " Q" + b[0] + " " + b[1] + " " + p2[0] + " " + p2[1];
+    }
+    const z = p[p.length - 1]; return d + " L" + z[0] + " " + z[1];
+  }
+  function head(p) {
+    const z = p[p.length - 1], y = p[p.length - 2];
+    const l = Math.hypot(z[0] - y[0], z[1] - y[1]) || 1, ux = (z[0] - y[0]) / l, uy = (z[1] - y[1]) / l;
+    const bx = z[0] - ux * 12, by = z[1] - uy * 12;
+    return z[0] + "," + z[1] + " " + (bx - uy * 5.5) + "," + (by + ux * 5.5) + " " + (bx + uy * 5.5) + "," + (by - ux * 5.5);
+  }
+
+  // ── 그리기 ──
+  let x0 = 0, y0 = 0, W = 100, H = 100, routes = [];
+  const gE = el("g", {}, svg), gN = el("g", {}, svg);
+  const edgeEls = EDGES.map(e => {
+    const g = el("g", { class: "edge" + (e.d ? " dash" : "") }, gE);
+    el("path", {}, g); el("polygon", {}, g);
+    if (e.l) el("text", {}, g).textContent = e.l;
+    return g;
+  });
+  function wrapText(s, max) {
+    const out = [];
+    s.split("\n").forEach(line => {
+      let cur = "";
+      line.split(" ").forEach(w => { if (cur && (cur + " " + w).length > max) { out.push(cur); cur = w; } else cur = cur ? cur + " " + w : w; });
+      out.push(cur);
+    });
+    return out;
+  }
+  const nodeEls = {};
+  NODES.forEach(n => {
+    const g = el("g", { class: "node " + n.c, tabindex: 0, role: "button", "aria-label": n.t.replace(/\n/g, ", ") }, gN);
+    el("rect", { x: 0, y: 0, width: n.w, height: n.h, rx: n.k === "pill" ? n.h / 2 : 10 }, g);
+    const parts = n.t.split("\n"), lines = [];
+    parts.forEach((p, i) => wrapText(p, 21).forEach(l => lines.push({ s: l, sub: i > 0 })));
+    const lh = 21, top = n.h / 2 - (lines.length - 1) * lh / 2 + 5.5;
+    lines.forEach((l, i) => { const t = el("text", { x: n.w / 2, y: top + i * lh, class: l.sub ? "sub" : "" }, g); t.textContent = l.s; });
+    g.addEventListener("click", ev => { ev.stopPropagation(); if (!moved) select(n.id); });
+    g.addEventListener("keydown", ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); select(n.id); } });
+    nodeEls[n.id] = g;
+  });
+  const placeNode = n => nodeEls[n.id].setAttribute("transform", "translate(" + n.x + " " + n.y + ")");
+
+  function layout() {
+    buildGrid();
+    routes = computeRoutes();
+    let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity;
+    NODES.forEach(n => { a = Math.min(a, n.x); b = Math.min(b, n.y); c = Math.max(c, n.x + n.w); d = Math.max(d, n.y + n.h); });
+    routes.forEach(p => p.forEach(q => { a = Math.min(a, q[0]); b = Math.min(b, q[1]); c = Math.max(c, q[0]); d = Math.max(d, q[1]); }));
+    x0 = a - 40; y0 = b - 40; W = c - a + 80; H = d - b + 80;
+    svg.setAttribute("viewBox", x0 + " " + y0 + " " + W + " " + H);
+    svg.setAttribute("width", W * scale); svg.setAttribute("height", H * scale);
+    NODES.forEach(placeNode);
+    EDGES.forEach((e, i) => {
+      const g = edgeEls[i], p = routes[i];
+      g.firstChild.setAttribute("d", pathD(p, 9));
+      g.children[1].setAttribute("points", head(p));
+      if (e.l) {
+        let bi = 0, bl = -1;
+        for (let q = 0; q < p.length - 1; q++) { const l = Math.abs(p[q + 1][0] - p[q][0]) + Math.abs(p[q + 1][1] - p[q][1]); if (l > bl) { bl = l; bi = q; } }
+        const t = g.children[2]; t.setAttribute("x", (p[bi][0] + p[bi + 1][0]) / 2 + 6); t.setAttribute("y", (p[bi][1] + p[bi + 1][1]) / 2 - 6);
+      }
+    });
+  }
+
+  // ── 선택 ──
+  const sel = new Set();
+  let listOpen = false;
+  const name = id => byId[id].t.replace(/\n/g, " ");
+  function select(id) {
+    if (sel.has(id)) sel.delete(id); else { sel.add(id); focusId = id; }
+    paint();
+  }
+  function hint(text) { const s = document.createElement("span"); s.style.color = "var(--muted)"; s.textContent = text; info.appendChild(s); }
+  function paint() { paintMain(); renderSide(); }
+  function paintMain() {
+    Object.values(nodeEls).forEach(g => g.classList.remove("on", "me", "prev", "next"));
+    edgeEls.forEach(g => g.classList.remove("on", "in", "out"));
+    svg.classList.toggle("sel", sel.size > 0);
+    info.textContent = "";
+    if (!sel.size) { hint("노드를 누르면 바로 이전 노드와 다음 노드만 남습니다. 여러 노드를 이어서 선택할 수 있고, 배경을 누르거나 Esc로 모두 해제합니다."); return; }
+    const prev = [], next = [];
+    sel.forEach(id => nodeEls[id].classList.add("on", "me"));
+    EDGES.forEach((e, i) => {
+      if (sel.has(e.t)) { edgeEls[i].classList.add("on", "in"); if (!sel.has(e.f)) { nodeEls[e.f].classList.add("on", "prev"); if (!prev.includes(e.f)) prev.push(e.f); } }
+      if (sel.has(e.f)) { edgeEls[i].classList.add("on", "out"); if (!sel.has(e.t)) { nodeEls[e.t].classList.add("on", "next"); if (!next.includes(e.t)) next.push(e.t); } }
+    });
+    const sum = document.createElement("span"); sum.textContent = "선택 " + sel.size + " · 이전 " + prev.length + " · 다음 " + next.length; info.appendChild(sum);
+    const tg = document.createElement("button"); tg.textContent = listOpen ? "목록 접기" : "목록 펼치기"; tg.setAttribute("aria-expanded", listOpen ? "true" : "false");
+    tg.addEventListener("click", () => { listOpen = !listOpen; paint(); }); info.appendChild(tg);
+    if (!listOpen) return;
+    const br = document.createElement("span"); br.style.flexBasis = "100%"; info.appendChild(br);
+    sel.forEach(id => { const b = document.createElement("button"); b.className = "chip s"; b.textContent = name(id) + " ×"; b.setAttribute("aria-label", name(id) + " 선택 해제"); b.addEventListener("click", () => { sel.delete(id); paint(); }); info.appendChild(b); });
+    const add = (label, ids, cls) => {
+      const l = document.createElement("span"); l.className = "lab"; l.textContent = label + " " + ids.length; info.appendChild(l);
+      ids.forEach(id => { const c = document.createElement("button"); c.className = "chip " + cls; c.textContent = name(id); c.addEventListener("click", () => { sel.add(id); focusId = id; paint(); focusNode(id); }); info.appendChild(c); });
+    };
+    add("이전", prev, "p"); add("다음", next, "n");
+  }
+
+  // ── 설명 패널: 선택한 노드마다 "제목 + 핵심 내용" 카드를 세로로 쌓습니다. ──
+  // 노드마다 한두 문장의 핵심 내용입니다. 열쇠는 NODES의 id입니다. (초고)
+  const CONTENT = {
+    "mwjxwa1y-01ty8": "대량의 텍스트로 학습해, 주어진 글 다음에 올 내용을 만들어 내는 모델입니다. 에이전트에서는 다음 행동을 고르는 두뇌 역할을 합니다.",
+    "mwjz7zuq-2c3z2": "문장 안의 모든 토큰이 서로를 참조(attention)해 문맥을 파악하는 신경망 구조입니다. 병렬로 학습할 수 있어 규모를 키울 수 있었고, 한 번에 볼 수 있는 길이에는 한도가 있습니다.",
+    "mwjxxubs-15e8q": "정답 표시 없이, 대량의 텍스트에서 다음 토큰을 맞히도록 학습하는 단계입니다. 언어와 지식의 기초가 여기서 만들어집니다.",
+    "mwjxye6q-1i6kc": "사전학습에 쓰인 텍스트 묶음입니다. 모델이 아는 것은 이 데이터에 들어 있던 내용, 수집한 시점까지로 한정됩니다.",
+    "mwjxwork-05vok": "앞의 글을 보고 다음 토큰의 확률을 계산하는 것이 LLM이 하는 일의 전부입니다. 기준은 사실 여부가 아니라 그럴듯함입니다.",
+    "mwjxx3ut-0dk24": "다음 토큰을 하나 뽑아 붙이는 일을 반복해 글을 만듭니다. 확률에서 뽑기 때문에 같은 입력에도 결과가 달라질 수 있습니다.",
+    "mwjxz6hj-1rh6r": "학습 데이터에 없던 정보와 학습 시점 이후의 일은 모릅니다. 회사 내부 문서나 최신 소식이 대표적입니다.",
+    "mwjxyspb-1p0l4": "모르는 내용도 그럴듯한 문장으로 지어냅니다. 다음 토큰을 확률로 고르는 방식에서 나오는 한계입니다.",
+    "e1": "LLM은 입력을 한 번 받아 곧바로 답을 만들어 냅니다. 그래서 여러 단계를 거쳐야 하는 복잡한 문제는 중간 과정을 건너뛰어 틀리기 쉽습니다.",
+    "mwjy2sm9-22p1i": "모델이 모르는 것을 채워 주는 방향입니다. 필요한 정보를 입력에 넣어 주거나, 추가 학습으로 모델 안에 넣습니다.",
+    "mwjy3xah-28k0v": "답을 바로 내지 않고, 질문을 풀어 가는 과정을 먼저 쓰게 하는 방향입니다.",
+    "mwjz48wn-1u5il": "큰 일을 한 번에 시키지 않고, 작은 단계로 나눠 차례로 처리하는 방향입니다.",
+    "mwjyix9o-0pluh": "모델 크기, 데이터, 연산량을 함께 키우면 성능이 꾸준히 오른다는 관찰입니다. 규모가 커지면서 작은 모델에는 없던 능력이 나타났습니다.",
+    "mwjykt85-0wb2z": "추가 학습 없이, 입력에 넣어 준 예시와 정보만으로 새 일을 해내는 능력입니다. 프롬프트로 모델을 다루는 모든 기법의 바탕입니다.",
+    "mwjyjr9p-0th2v": "자연어로 준 지시를 이해하고 그에 맞게 수행하는 능력입니다. 모델 크기가 커지면서 점차 나타나지만, 지시를 안정적으로 따르게 되는 것은 주로 instruction tuning을 통해서입니다.",
+    "mwjy4shv-2agud": "답을 내기 전에 풀이 과정을 단계별로 쓰게 하는 기법입니다. 충분히 큰 모델에서 추론 문제의 정확도가 크게 오릅니다.",
+    "mwjy8wog-0f96a": "사전학습된 모델을 더 작은 데이터로 추가 학습해, 특정 지식이나 행동을 넣는 방법입니다.",
+    "mwjymvvz-1d2vd": "다양한 '지시 → 응답' 쌍으로 추가 학습해, 처음 보는 지시도 따르게 만드는 fine-tuning입니다.",
+    "mwjyn9wl-1hmgr": "JSON처럼 정해진 형식에 맞춰 출력하는 능력입니다. 프로그램이 모델의 출력을 읽어 그대로 실행할 수 있게 됩니다.",
+    "mwjz5h1e-2824t": "원하는 결과가 나오도록 지시, 예시, 형식을 설계하는 일입니다. 모델은 그대로 두고 입력만으로 동작을 조정합니다.",
+    "mwjz4wb3-207i0": "일을 여러 프롬프트로 나누고, 앞 단계의 출력을 다음 단계의 입력으로 넘깁니다. 단계는 사람이 미리 정합니다.",
+    "e47": "답하기 전에 스스로 생각하는 과정을 거치도록 학습된 모델입니다. 프롬프트로 유도하던 Chain-of-Thought가 모델의 기본 동작이 됐습니다.",
+    "mwjy13yr-1y3l3": "질문과 관련된 문서를 검색해 입력에 넣고, 그것을 근거로 답하게 합니다. 모델을 다시 학습하지 않고도 최신 지식과 내부 지식을 쓸 수 있습니다.",
+    "mwk00wip-0bwb9": "컨텍스트 밖의 저장소(파일, 데이터베이스)에 정보를 두고, 필요할 때 찾아옵니다.",
+    "mwk0b4wu-1do33": "목표를 이루기 위해 해야 할 일을 모델이 스스로 나누고 순서를 정합니다. 사람이 미리 짜 주던 작업 순서를 모델이 맡습니다.",
+    "mwjynhq1-1jdr6": "모델이 외부 함수나 API의 호출을 요청하고, 그 결과를 받아 쓰는 능력입니다. 글만 쓰던 모델이 검색하고 실행할 수 있게 됩니다.",
+    "mwjynw0i-1najs": "생각(Reason)과 도구 호출(Act)을 한 흐름으로 엮어, 결과를 보고 다음 행동을 정하는 방식입니다. 에이전트 루프의 원형이 됐습니다.",
+    "e22": "지금까지의 생각, 행동, 관찰이 쌓인 기록입니다. 모델은 이 기록을 보고 다음 행동을 정합니다.",
+    "mwjzmk38-025uz": "추론-행동-관찰의 과정을 반복합니다. 더 이상 할 행동이 없으면 loop가 종료됩니다.",
+    "mwjz8n8c-2nzsh": "Transformer의 구조에서 오는 한계로, 한 번에 입력할 수 있는 양이 정해져 있습니다. 루프가 돌수록 기록이 쌓여 한도에 가까워지고, 중요한 내용이 묻힙니다.",
+    "mwk03ffa-0ks1a": "매 단계마다 컨텍스트에 무엇을 넣고 무엇을 뺄지 관리하는 방향입니다.",
+    "mwk03nod-0mzqw": "지시, 도구 정의, 기억, 기록 가운데 지금 필요한 것만 골라 컨텍스트를 구성하는 일입니다. 요약, 메모, 필요할 때만 불러오기가 대표적인 기법입니다.",
+    "e44": "일의 일부를 별도의 컨텍스트를 가진 에이전트에게 맡기고, 결과 요약만 받습니다. 주 에이전트의 컨텍스트를 아낍니다.",
+    "mwk068s5-0wxfu": "특정 작업의 절차와 스크립트를 묶어 두고, 필요할 때만 불러와 쓰는 방식입니다. 평소에는 이름과 설명만 컨텍스트에 둡니다.",
+    "mwk05ygz-0sozz": "도구와 데이터를 에이전트에 연결하는 공통 규약(Model Context Protocol)입니다. 어떤 도구가 있고 어떻게 부르는지 알려 주는 방법까지 규약에 들어 있어, 한 번 만든 도구를 여러 에이전트가 찾아 쓸 수 있습니다.",
+    "e8": "화면을 보고 마우스와 키보드를 조작해 일반 프로그램을 다루는 도구입니다. API가 없는 프로그램도 쓸 수 있게 됩니다.",
+    "e38": "긴 작업을 하다가, 일이 남았는데도 끝났다고 판단해 멈추는 한계입니다.",
+    "e39": "완료 조건을 정해 두고, 그 조건을 채울 때까지 계속 일하게 하는 방향입니다.",
+    "e9": "목표가 달성될 때까지 같은 지시로 에이전트를 반복 실행하는 방식입니다. 멈추려는 시점에 완료 여부를 확인해 다시 돌립니다.",
+    "e24": "같은 지시에도 매번 다르게 행동하고, 지시를 항상 지키지는 않습니다. 스스로 실행까지 하는 에이전트에서는 위험이 됩니다.",
+    "e31": "무엇을 하든 피해가 닿는 범위를 미리 좁혀 두는 방향입니다.",
+    "e25": "반드시 지켜야 할 일은 모델의 판단에 맡기지 않고, 코드나 사람이 강제하는 방향입니다.",
+    "e7": "에이전트의 명령을 격리된 환경에서 실행해, 접근할 수 있는 파일과 네트워크를 제한합니다.",
+    "mwk09djm-143t1": "루프의 정해진 시점(도구 실행 전후, 종료 시 등)에 반드시 실행되는 코드입니다. 검사, 차단, 자동 처리를 모델의 판단과 무관하게 수행합니다.",
+    "e33": "위험할 수 있는 행동은 실행하기 전에 사람에게 승인을 받습니다.",
+    "mwk09zhu-19vjd": "코딩뿐 아니라 컴퓨터를 이용한 다양한 작업으로 능력이 확장된 범용 에이전트입니다."
+  };
+  const side = document.getElementById("side"), sideBtn = document.getElementById("sideBtn");
+  let focusId = null, sideOn = true;
+  const mk = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  function card(id) {
+    const el = mk("article", "card " + byId[id].c);
+    el.appendChild(mk("h2", "", name(id)));
+    el.appendChild(CONTENT[id] ? mk("p", "", CONTENT[id]) : mk("p", "empty", "아직 내용이 없습니다."));
+    return el;
+  }
+  function renderSide() {
+    if (!sel.has(focusId)) focusId = sel.size ? [...sel][sel.size - 1] : null;
+    const show = sideOn && sel.size > 0;
+    side.hidden = !show; if (!show) return;
+    side.textContent = "";
+    let cur = null;
+    sel.forEach(id => { const c = card(id); if (id === focusId) cur = c; side.appendChild(c); });
+    if (cur) side.scrollTop = Math.max(0, cur.offsetTop - 12);   // 방금 고른 카드가 보이게 합니다.
+  }
+  sideBtn.onclick = () => { sideOn = !sideOn; sideBtn.setAttribute("aria-pressed", sideOn ? "true" : "false"); renderSide(); };
+
+  // ── 확대와 이동 ──
+  let scale = 0.6;
+  // ax, ay: 확대의 기준점(틀 안의 좌표). 없으면 틀의 가운데를 기준으로 합니다.
+  function setScale(s, keep, ax, ay) {
+    const old = scale; scale = Math.max(0.15, Math.min(2.4, s));
+    if (ax == null) { ax = wrap.clientWidth / 2; ay = wrap.clientHeight / 2; }
+    const mx = wrap.scrollLeft + ax, my = wrap.scrollTop + ay;
+    svg.setAttribute("width", W * scale); svg.setAttribute("height", H * scale);
+    if (keep) { wrap.scrollLeft = mx * scale / old - ax; wrap.scrollTop = my * scale / old - ay; }
+  }
+  // 틀 위에서 Ctrl/⌘ + 휠 또는 트랙패드 핀치: 마우스가 놓인 곳을 기준으로 확대합니다.
+  wrap.addEventListener("wheel", e => {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault();
+    const r = wrap.getBoundingClientRect();
+    setScale(scale * Math.exp(-Math.max(-25, Math.min(25, e.deltaY)) * 0.01), true, e.clientX - r.left, e.clientY - r.top);
+  }, { passive: false });
+  function fit() { setScale(Math.min((wrap.clientWidth - 4) / W, (wrap.clientHeight - 4) / H)); wrap.scrollLeft = 0; wrap.scrollTop = 0; }
+  function focusNode(id) {
+    const n = byId[id];
+    wrap.scrollTo({ left: (cx(n) - x0) * scale - wrap.clientWidth / 2, top: (cy(n) - y0) * scale - wrap.clientHeight / 2, behavior: "smooth" });
+  }
+  document.getElementById("zin").onclick = () => setScale(scale * 1.25, true);
+  document.getElementById("zout").onclick = () => setScale(scale / 1.25, true);
+  document.getElementById("zfit").onclick = fit;
+  document.getElementById("clear").onclick = () => { sel.clear(); paint(); };
+
+  let down = null, moved = false;
+  wrap.addEventListener("pointerdown", e => { moved = false; if (e.pointerType !== "mouse") return; down = { x: e.clientX, y: e.clientY, l: wrap.scrollLeft, t: wrap.scrollTop }; });
+  window.addEventListener("pointermove", e => {
+    if (!down) return;
+    const dx = e.clientX - down.x, dy = e.clientY - down.y;
+    if (Math.abs(dx) + Math.abs(dy) > 5) { moved = true; wrap.classList.add("drag"); }
+    if (moved) { wrap.scrollLeft = down.l - dx; wrap.scrollTop = down.t - dy; }
+  });
+  window.addEventListener("pointercancel", () => { down = null; moved = false; wrap.classList.remove("drag"); });
+  window.addEventListener("pointerup", () => { down = null; wrap.classList.remove("drag"); setTimeout(() => { moved = false; }, 0); });
+  wrap.addEventListener("click", () => { if (!moved && sel.size) { sel.clear(); paint(); } });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") { sel.clear(); paint(); } });
+
+  layout(); paint();
+  window.__evo = { routes: () => routes, nodes: NODES, edges: EDGES };
+})();
+</script>
