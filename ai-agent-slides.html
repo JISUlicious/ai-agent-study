@@ -1,0 +1,918 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Agent: 구성과 구현</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --outer:#C9CACC; --slide:#EDEDEA; --ink:#1A1A18; --muted:#55554F; --body:#3A3A36;
+  --accent:#F0591E; --soft:#E0E0DB; --line:#1A1A18;
+  --font:'Space Grotesk','Noto Sans KR',system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+  --s:1;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--outer);color:var(--ink);font-family:var(--font);overflow:hidden}
+/* 한국어 줄바꿈은 어절 단위로("되풀/이함"처럼 낱말 안에서 끊지 않게) */
+body{word-break:keep-all;overflow-wrap:break-word}
+#stage{position:fixed;inset:0}
+.slide{position:absolute;left:50%;top:50%;width:1280px;height:720px;margin:-360px 0 0 -640px;background:var(--slide);
+  padding:56px 80px 60px;display:flex;flex-direction:column;justify-content:space-between;visibility:hidden;transform:scale(var(--s))}
+.slide.on{visibility:visible}
+
+/* 머리와 꼬리 */
+.sh{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex:none}
+.sh h2{margin:0 0 14px;font-size:42px;font-weight:700;letter-spacing:-.02em;line-height:1.15}.meta{margin-bottom:20px;display:flex;align-items:center;gap:14px;font-size:16px;font-weight:500;color:var(--muted);white-space:nowrap}
+.meta .chk{font-size:13px;border:1.5px dashed var(--muted);border-radius:999px;padding:2px 10px}
+.body{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;padding:6px 0}
+.sf{display:flex;justify-content:space-between;align-items:flex-end;gap:40px;flex:none;min-height:56px}
+.note{display:flex;flex-direction:column;gap:14px}
+.note i{display:block;width:48px;height:3px;background:var(--accent)}
+.note p{margin:0;max-width:800px;font-size:22px;line-height:1.5;color:var(--body);text-wrap:pretty}
+.side-info{display:flex;flex-direction:column;align-items:flex-end;gap:8px;font-size:15px;color:var(--muted);text-align:right;max-width:400px;flex:none}
+.legend{display:flex;gap:22px;flex-wrap:wrap;justify-content:flex-end}
+.legend span{display:flex;align-items:center;gap:8px}
+.legend b{display:inline-block;width:32px;border-top:2px solid var(--line)}
+.legend b.dash{border-top-style:dashed}
+
+/* 알약 노드 */
+.pill{border:2px solid var(--line);border-radius:999px;padding:0 26px;min-height:56px;display:flex;flex-direction:column;justify-content:center;gap:2px;background:var(--slide)}
+.pill .t{font-size:22px;font-weight:500;line-height:1.2}
+.pill .c{font-size:15px;color:var(--muted);line-height:1.3}
+.pill.key{background:var(--accent);border-color:var(--accent)}
+.pill.key .t{font-weight:700}
+.pill.key .c{color:#2B1A12}
+
+/* 화살표 */
+.arr{display:flex;align-items:center}
+.arr b{flex:1;border-top:2px solid var(--line)}
+.arr.dash b{border-top-style:dashed}
+.arr .hd{width:0;height:0;border-left:11px solid var(--line);border-top:7px solid transparent;border-bottom:7px solid transparent}
+.arr.w48{width:48px;flex:none}
+
+/* 관계 그래프 */
+.hub{display:flex;align-items:stretch;justify-content:center;width:100%}
+.hub .col{position:relative;display:flex;flex-direction:column;justify-content:center;gap:var(--gap);width:310px;flex:none}
+.hub .col .pill{height:var(--ph)}
+.hub .arrows{display:flex;flex-direction:column;justify-content:center;gap:var(--gap);flex:1;min-width:56px}
+.hub .arrows.fixed{flex:0 0 120px}
+.hub .arrows .arr{height:var(--ph);flex:none}
+.hub .center{flex:none;min-width:250px;max-width:340px;border-radius:44px;padding:20px 32px}
+.hub .center .t{font-size:30px;letter-spacing:-.01em}
+.ccap{position:absolute;top:-30px;left:6px;font-size:15px;color:var(--muted);font-weight:500}
+.hub .col.grp{width:350px;gap:0;padding:20px;background:var(--soft);border-radius:34px}
+.varr{height:30px;flex:none;display:flex;flex-direction:column;align-items:center}
+.varr b{flex:1;border-left:2px solid var(--line)}
+.varr i{width:0;height:0;border-top:10px solid var(--line);border-left:7px solid transparent;border-right:7px solid transparent}
+.chips{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:34px;font-size:16px;color:var(--muted)}
+.chips span{border:1.5px solid var(--muted);border-radius:999px;padding:4px 14px;color:var(--ink)}
+.stackv{display:flex;flex-direction:column;align-items:center;width:100%}
+
+/* 흐름 */
+.flow{display:flex;align-items:flex-start;width:100%}
+.flow .step{display:flex;flex-direction:column;align-items:center;gap:12px;flex:none}
+.flow .step .pill{height:72px;align-items:center;padding:0 26px}
+.flow .step .pill .t{font-size:23px;font-weight:700;text-align:center;white-space:nowrap}
+.flow .cap{font-size:15px;color:var(--muted);text-align:center;line-height:1.4;max-width:220px}
+.flow .link{flex:1;min-width:26px;height:72px}
+.flow.dense .step .pill{height:62px;padding:0 18px}
+.flow.dense .step .pill .t{font-size:19px}
+.flow.dense .link{height:62px}
+.flows{display:flex;flex-direction:column;gap:46px;width:100%}
+.frow{display:flex;align-items:flex-start;gap:24px}
+.flab{width:210px;flex:none;height:72px;display:flex;align-items:center;font-size:19px;font-weight:700;color:var(--muted)}
+
+/* 짝 */
+.pairs{display:flex;flex-direction:column;gap:22px;width:100%}
+.prow{display:flex;align-items:center}
+.prow .pill{height:80px;flex:none}
+.prow .pa{width:380px}
+.prow .pb{min-width:380px;max-width:520px}
+.prow .arr{flex:1;height:80px}
+.pairs.grid{display:grid;grid-template-columns:380px 1fr 400px;gap:22px 0;align-items:center}
+.pairs.grid .pill,.pairs.grid .arr{height:80px}
+.pairs.grid .pb.span{height:auto;align-self:stretch;border-radius:44px}
+
+/* 카드 */
+.cards{display:grid;gap:20px;width:100%}
+.card{border:2px solid var(--line);border-radius:28px;padding:22px 26px;display:flex;flex-direction:column;gap:8px;min-height:118px;justify-content:center}
+.card .t{font-size:24px;font-weight:700;line-height:1.2}
+.card .c{font-size:17px;color:var(--muted);line-height:1.45}
+.card.key{background:var(--accent);border-color:var(--accent)}
+.card.key .c{color:#2B1A12}
+
+/* 표 */
+.tblwrap{width:100%;display:flex;flex-direction:column;gap:18px}
+.jt{width:100%;border-collapse:collapse;table-layout:fixed}
+.jt th,.jt td{border-top:2px solid var(--line);padding:16px 18px;text-align:left;vertical-align:top;font-size:19px;line-height:1.45}
+.jt tr:last-child th,.jt tr:last-child td{border-bottom:2px solid var(--line)}
+.jt tr:first-child th{font-size:17px;color:var(--muted);font-weight:500}
+.jt .rh{width:250px;font-size:20px;font-weight:700}
+.jt .corner{width:250px}
+.tfoot2{font-size:17px;color:var(--muted);line-height:1.5}
+.jt.compact th,.jt.compact td{padding:11px 16px}
+
+/* 코드 */
+.cwrap{display:flex;gap:28px;width:100%;align-items:center}
+.cblk{display:flex;flex-direction:column;min-width:0}
+.cblk.grow{flex:1 1 0}
+.cblk.fix{flex:none}
+.cblk .lab{font-size:15px;color:var(--muted);margin:0 0 8px 6px;font-weight:500}
+.code{font-family:var(--mono);font-size:17px;line-height:1.6;background:var(--soft);border-radius:20px;padding:20px 26px;white-space:pre;color:var(--ink);margin:0;overflow:hidden}
+.code.wrap{white-space:normal;line-height:1.4;padding:18px 24px}
+.code.wrap .ln{white-space:pre-wrap;padding-left:2ch;text-indent:-2ch}
+.code.wrap .ln.gap{height:.6em}
+.code .k{color:#B8380A;font-weight:500}
+.code .m{color:var(--muted)}
+.aside{display:flex;flex-direction:column;gap:16px;width:300px;flex:none}
+.aside .pill{height:76px}
+
+/* 대화 */
+.chat{display:flex;flex-direction:column;gap:26px;width:100%;max-width:1000px}
+.bubble{border:2px solid var(--line);border-radius:28px;padding:20px 28px;font-size:25px;line-height:1.5;max-width:760px}
+.bubble.a{align-self:flex-end;background:var(--soft);border-color:var(--soft)}
+.bubble .lab{display:block;font-size:15px;color:var(--muted);margin-bottom:6px}
+
+/* 토큰 */
+.tok{display:flex;flex-direction:column;gap:30px;width:100%}
+.trow{display:flex;align-items:center;gap:14px}
+.ctx{display:flex;gap:6px;width:420px;flex:none;justify-content:flex-end}
+.ctx span{border:2px solid var(--line);border-radius:12px;padding:8px 10px;font-size:21px;white-space:pre;background:var(--slide)}
+.ctx span.new{background:var(--accent);border-color:var(--accent);font-weight:700}
+.llm{height:60px;padding:0 22px;align-items:center}
+.probs{display:flex;flex-direction:column;gap:6px}
+.bar{display:flex;align-items:center;gap:10px;font-size:19px}
+.bar .w{width:76px;text-align:right}
+.bar i{display:block;height:14px;background:var(--muted);border-radius:7px}
+.bar.pick .w{font-weight:700}
+.bar.pick i{background:var(--accent)}
+.bar .p{font-family:var(--mono);font-size:15px;color:var(--muted)}
+.tfoot{font-size:15px;color:var(--muted);align-self:flex-end}
+
+/* 층 */
+.layers{display:flex;align-items:stretch;height:240px}
+.layers .center{width:200px;flex:none;border-radius:44px;justify-content:center;padding:0 28px}
+.layers .center .t{font-size:28px}
+.layers .arrows{display:flex;flex-direction:column;justify-content:center;gap:40px;flex:0 0 80px}
+.layers .arrows .arr{height:90px}
+.lrows{display:flex;flex-direction:column;justify-content:center;gap:40px}
+.lrow{display:flex;align-items:center;gap:16px;height:90px}
+.llab{width:110px;display:flex;flex-direction:column;gap:2px}
+.llab b{font-size:32px;line-height:1}
+.llab span{font-size:15px;color:var(--muted)}
+.lrow .pill{height:72px;width:160px;align-items:center;padding:0 12px}
+.lrow .pill .t{font-size:20px;font-weight:500}
+
+/* 수식 */
+.eq{display:flex;flex-direction:column;align-items:center;gap:34px}
+.eqrow{display:flex;align-items:center;gap:16px}
+.eqrow .pill{height:72px;align-items:center}
+.eqrow .op{font-size:34px;font-weight:500;color:var(--muted)}
+.eqrow .big{height:96px;border-radius:48px;padding:0 44px}
+.eqrow .big .t{font-size:34px}
+
+/* 캔버스 다이어그램 */
+.cv{position:relative;width:1120px;flex:none}
+.cvs{position:absolute;left:0;top:0;overflow:visible}
+.cvs path,.cvs line{fill:none;stroke:var(--line);stroke-width:2}
+.cvs .dash{stroke-dasharray:7 6}
+.cvs .el{font:500 14px var(--font);fill:var(--muted);stroke:var(--slide);stroke-width:6px;paint-order:stroke;text-anchor:middle}
+.cvs .track{fill:none;stroke:var(--line);stroke-width:2}
+.cvs .lh{fill:var(--line);stroke:none}
+.cbox{position:absolute;border:2px solid var(--line);border-radius:24px}
+.cbox span{position:absolute;left:16px;top:8px;font-size:14px;color:var(--muted);font-weight:500;white-space:nowrap}
+.cbox.sub{border-style:dashed;border-radius:18px}
+.cnode{position:absolute;padding:0 12px;align-items:center;text-align:center;min-height:0}
+.cnode .t{font-size:15px;font-weight:600}
+.cnode .c{font-size:13px}
+.ctext{position:absolute;white-space:nowrap}
+.ctext.ct{font-size:22px;font-weight:700}
+.ctext.cc{font-size:15px;color:var(--muted)}
+.ap{position:absolute;transform:translate(-50%,-50%);min-height:72px;align-items:center;text-align:center;padding:9px 20px}
+.ap .t{font-size:22px;font-weight:700;white-space:nowrap}
+.lp{position:relative;width:1120px;flex:none}
+
+/* 시퀀스 */
+.sq{position:relative;width:900px;flex:none}
+.sq .head{position:absolute;top:0;width:220px;height:48px;align-items:center;transform:translateX(-50%)}
+.sq .head .t{font-size:19px;font-weight:700}
+.sq .ml{font:500 15px var(--mono);fill:var(--ink);text-anchor:middle;stroke:var(--slide);stroke-width:6px;paint-order:stroke}
+.sq .ml .md{font-family:var(--font);fill:var(--muted)}
+.sq .life{stroke:var(--muted);stroke-dasharray:4 5;stroke-width:1.5}
+.sq .ret{stroke-dasharray:7 6}
+
+/* Transformer */
+.attn{display:flex;align-items:center;gap:44px;width:100%}
+.stk{display:flex;flex-direction:column;align-items:stretch;width:330px;flex:none;position:relative}
+.blk{border:2px solid var(--line);border-radius:14px;height:50px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:500;background:var(--slide);text-align:center;padding:0 10px}
+.blk.key{background:var(--accent);border-color:var(--accent);font-weight:700}
+.blk.pos{border-style:dashed}
+.conn{height:14px;width:2px;background:var(--line);align-self:center}
+.rep{position:absolute;right:-56px;top:64px;height:114px;width:22px;border:2px solid var(--muted);border-left:none;border-radius:0 10px 10px 0}
+.rep span{position:absolute;left:30px;top:44px;font-size:16px;color:var(--muted);white-space:nowrap}
+.callouts{flex:1;display:flex;flex-direction:column;gap:16px;padding-left:96px}
+.co .t{font-size:21px;font-weight:700}
+.co .c{font-size:16px;color:var(--muted);line-height:1.4}
+.cfoot{font-size:15px;color:var(--muted);border-top:1.5px solid var(--muted);padding-top:10px;margin-top:6px}
+.agrid{display:grid;grid-template-columns:repeat(8,18px);gap:3px}
+.agrid i{width:18px;height:18px;border:1.5px solid var(--muted);border-radius:3px}
+.agrid i.f{background:var(--ink);border-color:var(--ink)}
+.gcap{font-size:15px;color:var(--muted);margin-top:10px;text-align:center}
+
+/* 곡선 */
+.curve{display:flex;align-items:center;gap:56px;width:100%}
+.curve svg text{font-family:var(--font)}
+.cside{flex:1;display:flex;flex-direction:column;gap:14px}
+.cside h3{margin:0 0 4px;font-size:26px}
+.cside div{font-size:19px;line-height:1.45;padding-left:18px;position:relative}
+.cside div::before{content:"";position:absolute;left:0;top:12px;width:8px;height:2px;background:var(--line)}
+
+/* 제목, 목차 */
+.title-slide{padding:72px 80px;justify-content:space-between}
+.title-slide .kicker,.title-slide .by{font-size:17px;font-weight:500;color:var(--muted)}
+.title-slide .tl{display:flex;flex-direction:column;gap:24px}
+.title-slide .bar{width:120px;height:4px;margin-bottom:12px;background:var(--accent)}
+.title-slide h1{margin:0;font-size:84px;line-height:1.12;font-weight:700;letter-spacing:-.03em}
+.title-slide .sub{font-size:24px;color:var(--muted)}
+.toc{display:grid;grid-template-columns:1fr 1fr;gap:56px;width:100%;align-self:center}
+.toc a{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:9px 2px;border-top:2px solid var(--line);color:var(--ink);text-decoration:none;font-size:22px;font-weight:500;cursor:pointer}
+.toc a:last-child{border-bottom:2px solid var(--line)}
+.toc a span:last-child{font-size:16px;color:var(--muted);font-family:var(--mono)}
+.toc a:hover span:first-child{color:#B8380A}
+
+/* 조작 */
+#hud{position:fixed;right:14px;bottom:12px;display:flex;align-items:center;gap:6px;font-size:13px;color:#3A3A36;z-index:5}
+#hud button{font:inherit;border:1px solid #8E8F92;background:#E4E4E1;border-radius:8px;padding:4px 10px;cursor:pointer;color:#1A1A18;min-width:34px;min-height:30px}
+#hud button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#cnt{min-width:58px;text-align:center;font-family:var(--mono)}
+#list{position:fixed;inset:0;background:rgba(26,26,24,.55);display:none;align-items:center;justify-content:center;z-index:10}
+#list.open{display:flex}
+#list .box{background:var(--slide);border-radius:16px;padding:20px 24px;width:min(860px,94vw);max-height:86vh;overflow:auto;columns:2;column-gap:28px}
+#list button{display:flex;gap:10px;width:100%;text-align:left;font:inherit;font-size:14px;background:none;border:none;padding:5px 4px;cursor:pointer;color:var(--ink);break-inside:avoid}
+#list button span{font-family:var(--mono);color:var(--muted);min-width:24px}
+#list button:hover{background:var(--soft)}
+
+@media print{
+  html,body{overflow:visible;height:auto;background:#fff}
+  #stage{position:static}
+  .slide{position:relative;left:auto;top:auto;margin:0;transform:none;visibility:visible;break-after:page;page-break-after:always}
+  #hud,#list{display:none!important}
+  @page{size:1280px 720px;margin:0}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1A1A18"/></marker>
+    <marker id="ahs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1A1A18"/></marker>
+  </defs>
+</svg>
+<main id="stage" aria-live="polite"></main>
+<nav id="hud" aria-label="슬라이드 이동">
+  <button id="prev" type="button" aria-label="이전 슬라이드">‹</button>
+  <span id="cnt"></span>
+  <button id="next" type="button" aria-label="다음 슬라이드">›</button>
+  <button id="openList" type="button">목록</button>
+</nav>
+<div id="list" role="dialog" aria-label="슬라이드 목록"><div class="box"></div></div>
+<noscript>이 슬라이드는 JavaScript가 필요합니다.</noscript>
+<script>
+/* 슬라이드 내용. 키워드와 짧은 한 줄만 둡니다. check:1은 사실 확인 중인 장입니다. */
+const S = [
+{type:'title', kicker:'AI Agent Study', title:'AI Agent: 구성과 구현', sub:'LLM에서 범용 에이전트까지', by:'[발표자] · [날짜]'},
+/* 목차 항목: [제목, 첫 섹션, 끝 섹션]. 섹션을 생략하면 제목과 같은 섹션. 쪽 범위는 각 장의 sec로 계산합니다 */
+{type:'toc', title:'목차', items:[
+  ['AI Agent 구성요소','구성요소'],['LLM'],['Tool Use'],['ReAct'],['Memory'],['Agent Loop'],
+  ['Planning'],['Primitive AI Agent'],['AI Agent 한계'],['Context Engineering'],['Agent Skills'],['Sub-agents'],
+  ['MCP'],['Hook'],['Hook · Controls','Hook · Controls','Controls · Sandbox'],['Hook · Verification'],['General-Purpose AI Agent'],['Evaluation']]},
+
+{sec:'구성요소', title:'AI Agent 구성요소', type:'layers', key:'AI Agent', rows:[
+  {label:'L1', cap:'기본 구성', items:['LLM','Tool','Memory','Agent Loop']},
+  {label:'L2', cap:'확장 구성', items:['Planning','Verification','Evaluation','Control']}],
+  note:'L1은 에이전트를 이루는 기본 구성, L2는 작업을 계획하고 확인하고 제어하는 확장'},
+
+{sec:'LLM', title:'LLM 토큰 생성', type:'tokens', foot:'토큰 분할과 확률은 예시', steps:[
+  {ctx:['대한민국','의',' 수도','는'], cands:[['서울',.91],['부산',.03],['어디',.01]], pick:'서울'},
+  {ctx:['대한민국','의',' 수도','는',' 서울'], newIdx:4, cands:[['입니다',.88],['이다',.06],['이며',.02]], pick:'입니다'}],
+  note:'앞 토큰을 보고 다음 토큰의 확률을 계산해 하나를 고르는 일을 반복'},
+{sec:'LLM', title:'LLM Pre-training', type:'flow', steps:[
+  {t:'Training dataset', c:'웹 문서 · 책 · 코드'},
+  {t:'Pre-training', c:'다음 토큰 맞히기 학습', key:1},
+  {t:'LLM', c:'학습된 가중치'},
+  {t:'Next token prediction', c:'생성할 때의 동작'}],
+  note:'대량의 텍스트로 다음 토큰을 맞히도록 학습'},
+{sec:'LLM', title:'LLM Text generation', type:'chat', ql:'Prompt', al:'이어서 생성한 토큰',
+  q:'Python에서 리스트를 뒤집는 방법은?',
+  a:'reverse() 메서드를 쓰거나, [::-1] 슬라이싱으로 뒤집은 새 리스트를 만듭니다.',
+  note:'질문도 문장의 앞부분, 답은 그 뒤에 이어질 토큰을 생성한 결과'},
+{sec:'LLM', title:'LLM 한계', type:'pairs', style:'dash', legend:[['dash','원인']], rows:[
+  {a:{t:'Next token prediction', c:'그럴듯한 다음 토큰'}, b:{t:'Hallucination', c:'사실과 다른 내용을 생성'}},
+  {a:{t:'Training dataset', c:'학습 시점에 고정'}, b:{t:'지식 한계', c:'최신 정보 · 내부 자료 없음'}},
+  {a:{t:'복잡한 작업', c:'여러 단계를 한 번에 처리'}, b:{t:'추론 한계', c:'다단계 추론에서 실수'}}],
+  note:'다음 토큰을 고르는 방식, 고정된 학습 데이터, 복잡한 작업에서 생기는 세 한계'},
+{sec:'LLM', title:'한계 극복 1: RAG', type:'hub', lcap:'한계', rcap:'단계', rgroup:1,
+  left:[{t:'지식 한계'},{t:'Hallucination'}],
+  center:{t:'RAG', c:'Retrieval-Augmented Generation'},
+  right:[{t:'Retrieval', c:'관련 문서 검색'},{t:'Augmentation', c:'프롬프트에 문서 추가'},{t:'Generation', c:'문서를 근거로 생성'}],
+  note:'필요한 지식을 검색해 넣고 생성, 환각을 줄이지만 없애지는 못함', src:'Lewis et al., 2020'},
+{sec:'LLM', title:'한계 극복 2: Chain-of-Thought', type:'hub', lcap:'한계',
+  left:[{t:'추론 한계'}],
+  center:{t:'Chain-of-Thought', c:'CoT'},
+  right:[{t:'중간 단계 생성', c:'풀이 과정을 먼저 씀'},{t:'단계별 풀이', c:'앞 단계가 다음 단계의 근거'},{t:'정확도 향상', c:'수학 · 논리 문제'}],
+  note:'답 전에 풀이 과정을 생성하게 해 다단계 추론을 도움', src:'Wei et al., 2022'},
+{sec:'LLM', title:'한계 극복 3: Prompt chaining', type:'hub', lcap:'한계', rcap:'단계', rgroup:1,
+  left:[{t:'추론 한계'}],
+  center:{t:'Prompt chaining', c:'작은 단계로 분해'},
+  right:[{t:'LLM 호출 1', c:'개요 작성'},{t:'Gate', c:'중간 결과 검사'},{t:'LLM 호출 2', c:'앞 출력으로 본문 작성'}],
+  note:'한 번에 풀기 어려운 작업을 단계로 나누고, 앞 단계 출력을 다음 단계 입력으로', src:'Anthropic, Building Effective Agents (2024)'},
+
+{sec:'Tool Use', title:'질의 기반 RAG', type:'flow', steps:[
+  {t:'질문', c:'사용자 입력'},
+  {t:'Retriever', c:'질문으로 한 번 검색', key:1},
+  {t:'상위 k개 문서', c:'벡터 색인에서\n질문과 가까운 문서'},
+  {t:'LLM', c:'질문 + 문서로 생성'},
+  {t:'답변', c:'문서를 근거로'}],
+  note:'답하기 전에 질문으로 한 번 검색: 무엇을 언제 찾을지는 프로그램이 정함',
+  src:'Lewis et al., 2020 (RAG): 검색기 DPR, 상위 K개 문서'},
+{sec:'Tool Use', title:'WebGPT 웹 검색', type:'flow', steps:[
+  {t:'질문'},
+  {t:'LLM', c:'명령 한 줄 출력\nSearch · Clicked on link · Quote'},
+  {t:'명령 실행', c:'Bing 검색 · 페이지를 텍스트로', key:1},
+  {t:'상태 요약', c:'페이지 · 인용 · 남은 행동 수\n다음 스텝의 입력'},
+  {t:'답', c:'End: Answer 뒤\n인용을 근거로 작성'}],
+  note:'모델이 낸 텍스트 명령을 환경이 해석해 실행하고, 결과를 다음 스텝의 입력으로 돌려줌',
+  src:'Nakano et al., 2021 (WebGPT): 명령 형식은 사람 시연으로 학습'},
+{sec:'Tool Use', title:'JSON 출력', type:'code2', blocks:[
+  {label:'Prompt', code:'다음 요청에서 도시와 날짜를 뽑아\nJSON으로만 답하세요.\n⟦형식: {"city": "...", "date": "..."}⟧\n\n요청: 내일 부산 날씨 어때?'},
+  {label:'Output', code:'{"city": "부산", "date": "내일"}'}],
+  aside:[{t:'Instruction following', c:'지시한 형식을 따름'},{t:'In-context learning', c:'예시로 형식을 익힘'}],
+  note:'지시와 형식 예시만으로 프로그램이 읽을 수 있는 JSON을 출력'},
+{sec:'Tool Use', title:'Tool call 프롬프트 템플릿', type:'code2', fs:14, blocks:[
+  {label:'입력 · Qwen3.5 chat template 중 tool call 형식 부분 (도구 목록 <tools> 다음에 붙음)', fs:12, wrap:1, code:'If you choose to call a function ONLY reply in the following format with NO suffix:\n\n⟦<tool_call>⟧\n<function=example_function_name>\n<parameter=example_parameter_1>\nvalue_1\n</parameter>\n<parameter=example_parameter_2>\nThis is the value for the second parameter\nthat can span\nmultiple lines\n</parameter>\n</function>\n⟦</tool_call>⟧\n\n<IMPORTANT>\nReminder:\n- Function calls MUST follow the specified format: an inner <function=...></function> block must be nested within <tool_call></tool_call> XML tags\n- Required parameters MUST be specified\n- You may provide optional reasoning for your function call in natural language BEFORE the function call, but NOT after\n- If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls\n</IMPORTANT>'},
+  {label:'출력 · "서울 날씨 알려줘"에 대한 호출', code:'⟦<tool_call>⟧\n<function=get_weather>\n<parameter=city>\nSeoul\n</parameter>\n</function>\n⟦</tool_call>⟧'}],
+  note:'템플릿이 알려 준 형식대로 모델이 호출을 씀',
+  src:'Qwen3.5 chat template · 참고: Qwen3 · Qwen2.5는 <tool_call> 안에 JSON (vLLM 문서)'},
+{sec:'Tool Use', title:'Tool call 실행', type:'codeflow', fs:16,
+  steps:[{t:'LLM', c:'호출을 JSON으로'},{t:'Parser', c:'json.loads'},{t:'get_weather()', c:'프로그램이 실행', key:1},{t:'결과', c:'messages에 추가'},{t:'LLM', c:'최종 답 생성'}],
+  code:'out = llm(messages, tools=[get_weather])     ⟪# 모델은 호출만 출력⟫\ncall = json.loads(out)       ⟪# {"name": "get_weather", "arguments": {"city": "Seoul"}}⟫\nresult = ⟦get_weather⟧(**call["arguments"])   ⟪# {"temp": 3, "sky": "맑음"}⟫\nmessages.append(tool_result(result))\nanswer = llm(messages)        ⟪# "서울은 3도, 맑습니다"⟫',
+  note:'모델은 호출을 텍스트로 출력하고, 실행은 프로그램이 맡아 결과를 다시 넣음'},
+{sec:'Tool Use', title:'Tool use 효과', type:'hub',
+  center:{t:'Tool use'},
+  right:[{t:'실시간 정보', c:'검색 · 날씨 · 일정'},{t:'정확한 정보', c:'계산 · DB 조회'},{t:'다양한 기능', c:'파일 · 브라우저 · 외부 서비스'}],
+  chips:{label:'awesome-mcp-servers 카테고리 예 (24개 중)', items:['developer-tools','search-extraction','databases','browser-automation','file-management','communication']},
+  note:'모델이 못 하는 일을 도구에 맡겨 할 수 있는 일을 넓힘', src:'Gao 2026 부록: awesome-mcp-servers 2,213개, 24개 카테고리'},
+
+{sec:'Tool Use', title:'Tool call 반복 실패', type:'code', fs:15, label:'Act-only 궤적 · ALFWorld (텍스트로 집안일을 하는 환경)',
+  code:'Your task is to: Put some pepper shaker on a drawer.\nAct 1  Go to drawer 1\n⟪Obs 1⟫  The drawer 1 is closed.\nAct 2  Open drawer 1\n⟪Obs 2⟫  You open the drawer 1. … In it, you see a dishsponge 2, and a spoon 1.\nAct 3  Go to sinkbasin 1\n⟪Obs 3⟫  On the sinkbasin 1, you see a dishsponge 3, a spatula 1, and a spoon 2.\nAct 4  Take peppershaker 1 from sinkbasin 1\n⟪Obs 4⟫  ⟦Nothing happens.⟧\nAct 5  ⟦Take peppershaker 1 from sinkbasin 1⟧\n⟪Obs 5⟫  ⟦Nothing happens.⟧',
+  aside:[{t:'Act-only', c:'생각(Thought) 없이 행동만 출력'},{t:'Hallucinating action', c:'Obs 3을 보고도 없는 물건을\n계속 집으려 함'},{t:'ALFWorld 성공률', c:'Act 45% · ReAct 71%\n(6번 시도 중 최고)'}],
+  note:'생각 없이 행동만 하면 환경의 현재 상태를 놓쳐, 실패를 보고도 같은 호출을 되풀이함',
+  src:'Yao et al., 2022 (ReAct) Figure 1 · Table 3'},
+
+{sec:'ReAct', title:'ReAct 루프', type:'loop',
+  nodes:[{t:'Reason', c:'Thought'},{t:'Act', c:'Action'},{t:'Observe', c:'Observation · feedback'}],
+  center:{t:'ReAct'},
+  note:'생각하고, 행동하고, 결과를 보고 다시 생각하는 반복', src:'Yao et al., 2022'},
+{sec:'ReAct', title:'ReAct 이력 활용', type:'code', fs:14, wrap:1, label:'ReAct 궤적 · ⟨Tool call 반복 실패⟩쪽과 같은 ALFWorld 과제',
+  code:'Your task is to: Put some pepper shaker on a drawer.\nAct 1  ⟦Think[First I need to find a pepper shaker...more likely to appear in cabinets (1-6), countertops (1-3), ... ]⟧\nAct 2  Go to cabinet 1\n⟪Obs 2⟫  On the cabinet 1, you see a vase 2.\n⟪(Here the agent go to cabinet 1, then cabinet 2, 3, then countertop 1 and 2)⟫\nAct 6  Go to countertop 3\n⟪Obs 6⟫  On the countertop 3, you see a apple 1, a bread 1, ...... a pepper shaker 1, and a vase 3.\nAct 7  Take pepper shaker 1 from countertop 3\n⟪Obs 7⟫  You pick up the pepper shaker 1 from the countertop 3.\nAct 8  ⟦Think[Now I find a pepper shaker 1. Next, I need to put it in/on drawer 1. ]⟧\nAct 9  Go to drawer 1\n⟪Obs 9⟫  Drawer 1 is closed.\nAct 10 Open drawer 1\n⟪Obs 10⟫ You open Drawer 1 …\nAct 11 Put pepper shaker 1 in/on drawer 1\n⟪Obs 11⟫ ⟦You put pepper shaker 1 in/on the drawer 1.⟧',
+  aside:[{t:'하위 목표로 나눔', c:'Act 1: 먼저 찾을 곳부터 정함'},{t:'현재 상태 추적', c:'Act 8: 찾았으니 다음은 drawer 1'},{t:'같은 과제 성공', c:'Obs 11: drawer 1에 넣음'}],
+  note:'생각(Think)으로 목표를 나누고 현재 상태를 적어 두어, ⟨Tool call 반복 실패⟩쪽에서 실패한 과제를 끝냄',
+  src:'Yao et al., 2022 (ReAct) Figure 1 (2b)'},
+{sec:'ReAct', title:'ReAct 핵심 개념', type:'hub',
+  center:{t:'ReAct'},
+  right:[{t:'Memory', c:'행동과 관찰의 이력'},{t:'Agent loop', c:'생각 · 행동 · 관찰의 반복'}],
+  note:'ReAct에서 에이전트의 두 핵심이 나옴: 이력을 남기는 Memory, 반복을 돌리는 Agent loop'},
+
+{sec:'Memory', title:'내부 메모리', type:'hub',
+  left:[{t:'사용자 메시지'},{t:'모델 응답'},{t:'Tool call 결과'}],
+  center:{t:'내부 메모리', c:'trajectory · state · transcript'},
+  right:[{t:'Context window', c:'다음 판단에 사용'},{t:'세션 저장', c:'DB · 로컬 파일'}],
+  note:'에이전트와 사용자가 주고받은 메시지와 도구 결과의 기록, 세션이 끝나도 DB나 파일에 남음'},
+{sec:'Memory', title:'외부 메모리', type:'hub',
+  left:[{t:'Vector DB', c:'임베딩 검색'},{t:'프로젝트 문서'},{t:'코드'},{t:'DB · 파일'}],
+  center:{t:'외부 메모리'},
+  right:[{t:'Context window', c:'필요한 부분만 넣음'}],
+  note:'에이전트 밖의 자료를 필요할 때 찾아 가져옴'},
+{sec:'Agent Loop', title:'Agent loop 구조', type:'loop',
+  nodes:[{t:'LLM 호출'},{t:'Tool 실행'},{t:'결과 추가', c:'Observation'}],
+  center:{t:'Agent loop'}, entry:{t:'사용자 입력'}, exit:{t:'답', c:'도구 호출 없음'},
+  note:'ReAct의 반복을 프로그램으로 구현: 도구 호출이 없을 때까지 돈다'},
+{sec:'Agent Loop', title:'Agent 작업 수행', type:'loop',
+  nodes:[{t:'LLM 호출', c:'① read_file 요청\n④ edit_file 요청'},{t:'Tool 실행', c:'② README.md 읽기\n⑤ 설치 방법 절 추가'},{t:'결과 추가', c:'③ 파일 내용\n⑥ 수정 완료'}],
+  center:{t:'Agent loop'}, entry:{t:'사용자 입력', c:'"README에 설치 방법\n추가해줘"'}, exit:{t:'답', c:'⑦ 도구 호출 없음\n"추가했습니다"'},
+  note:'①~③에서 파일을 읽고 ④~⑥에서 고친 뒤, ⑦에서 도구 호출 없이 답하면 루프가 끝남',
+  src:'에이전트: 환경의 피드백을 받으며 루프 안에서 도구를 쓰는 LLM (Building Effective Agents, 2024)'},
+
+{sec:'Planning', title:'LLM 한계 극복 현황', type:'pairs', legend:[['solid','대응'],['dash','원인']], rows:[
+  {a:{t:'Hallucination', c:'사실과 다른 내용을 생성'}, b:{t:'RAG · Tool call', c:'근거를 찾아 넣어 환각을 줄이고\n최신 · 내부 정보를 보충', span:2}},
+  {a:{t:'지식 한계', c:'최신 정보 · 내부 자료 없음'}},
+  {a:{t:'추론 한계', c:'CoT · Prompt chaining으로 일부 대응'}, b:{t:'복잡한 작업 오작동', c:'에이전트의 긴 작업에서 다시 드러남', key:1}, style:'dash'}],
+  note:'환각과 지식 한계는 RAG와 Tool call로 대응했고, 남은 추론 한계는 복잡한 작업에서 오작동으로 드러남'},
+{sec:'Planning', title:'복잡한 작업 오작동', type:'hub', rightStyle:'dash', legend:[['dash','오작동 (예시)']],
+  center:{t:'복잡한 작업', c:'기능 추가 + 테스트 + 문서'},
+  right:[{t:'단계 누락', c:'테스트를 건너뜀'},{t:'순서 오류', c:'구현 전에 문서부터'},{t:'완료 착각', c:'일부만 하고 끝냄'}],
+  note:'단계가 많은 작업은 빠뜨리거나 순서를 어기기 쉬움'},
+{sec:'Planning', title:'Prompt chaining 재검토', type:'flows', rows:[
+  {label:'Prompt chaining', steps:[{t:'사람이 단계 설계'},{t:'정해진 순서로 실행'},{t:'결과'}]},
+  {label:'Planning', steps:[{t:'모델이 계획 수립', key:1},{t:'계획대로 실행'},{t:'진행 확인 · 수정'}]}],
+  note:'Prompt chaining은 사람이 단계를 정하고, Planning은 모델이 작업에 맞춰 단계를 세움'},
+{sec:'Planning', title:'CoT 프롬프트', type:'codefan', fs:14,
+  input:{label:'질문 (두 경우 같음)', code:'Q: A juggler can juggle 16 balls.\n   Half of the balls are golf balls,\n   and half of the golf balls are blue.\n   How many blue golf balls are there?'},
+  outs:[
+    {label:'CoT 미적용 (Zero-shot) → 8 ✗', code:'A: The answer (arabic numerals) is\n8 ✗'},
+    {label:'CoT 적용 (Zero-shot-CoT) → 4 ✓', code:'A: ⟦Let\'s think step by step.⟧\nThere are 16 balls in total.\nHalf of the balls are golf balls.\nThat means that there are 8 golf balls.\nHalf of the golf balls are blue.\nThat means that there are 4 blue golf balls. ✓'}],
+  aside:[{t:'Last Letter 0.2% → 57.6%', c:'수학 밖 과제 · 기호'},{t:'Coin Flip 12.8% → 91.4%', c:'수학 밖 과제 · 기호'},{t:'Date 49.3% → 67.5%', c:'수학 밖 과제 · 논리'}],
+  note:'질문은 그대로 두고 답의 첫 줄만 바꿔 풀이를 먼저 쓰게 하면 오답이 정답으로 바뀜',
+  src:'Kojima et al., 2022: Figure 1 (GPT-3 출력) · Table 1 (text-davinci-002, Zero-shot → Zero-shot-CoT)'},
+{sec:'Planning', title:'CoT 구조', type:'flows', rows:[
+  {label:'직접 답', steps:[{t:'질문'},{t:'답'}]},
+  {label:'Chain-of-Thought', steps:[{t:'질문'},{t:'중간 추론 단계', c:'단계 1 → 2 → 3', key:1},{t:'답'}]}],
+  note:'중간 추론 단계를 거쳐 답에 도달, 각 단계가 다음 단계의 근거'},
+{sec:'Planning', title:'Planning 구현', type:'hub',
+  left:[{t:'복잡한 작업'}],
+  center:{t:'Planning'},
+  right:[{t:'Plan mode', c:'변경 없이 조사하고 계획 제안'},{t:'Tasks', c:'TaskCreate · TaskUpdate로 단계 관리'},{t:'계획 갱신', c:'진행하며 다음 단계 수정'}],
+  note:'계획을 먼저 세워 확인받고, 진행 상황을 목록으로 관리', src:'Claude Code 문서: plan mode (Shift+Tab, /plan), Tasks'},
+{sec:'Primitive AI Agent', title:'Primitive AI Agent', type:'equation',
+  items:['LLM','Tool Use','Memory','Agent Loop','Planning'], result:'Primitive AI Agent',
+  note:'다섯 요소를 갖춘 초기 형태의 에이전트'},
+
+{sec:'AI Agent 한계', title:'AI Agent 한계', type:'pairs', style:'solid', legend:[['solid','대응']], rows:[
+  {a:{t:'Context window 한계', c:'Context window limit'}, b:{t:'Context engineering · Skills · Sub-agents', c:'⟨Context Engineering|Sub-agents⟩쪽'}},
+  {a:{t:'조기 종료', c:'Stops before the task is done'}, b:{t:'Goal loop · Verification', c:'⟨Hook · Verification⟩쪽'}},
+  {a:{t:'비결정성', c:'Non-deterministic behavior'}, b:{t:'Controls', c:'⟨Hook 판정 구조|Controls · Sandbox⟩쪽'}}],
+  note:'작업이 길고 복잡해지면서 드러난 세 한계와 그 대응'},
+{sec:'Context Engineering', title:'Transformer 구조 한계', type:'attention', items:[
+  {t:'Attention budget → 품질 저하', c:'Self-attention: 토큰이 늘수록 주의가 n²쌍에 얇게 퍼짐\n필요한 정보를 놓치고, 중간 위치에서 특히 심함 (다음 장)'},
+  {t:'학습 길이 → Context window 상한', c:'Positional encoding(RoPE): 학습한 길이를 넘는 위치에서 attention이 무너짐\nRoPE 조정 · YaRN과 추가 학습으로 늘림 (예: 256K → 1M)'}],
+  foot:'사용 단계 비용: KV cache 메모리와 prefill 시간은 길이에 따라 늘어남',
+  note:'길수록 attention은 품질을 떨어뜨리고, 위치 표현은 학습한 길이에서 창의 상한을 만듦',
+  src:'Anthropic, Effective context engineering (2025) · StreamingLLM (2023) · Qwen3.8 모델 카드 (YaRN ×4)'},
+{sec:'Context Engineering', title:'Lost in the middle', type:'curve',
+  side:{t:'실험 결과', items:['중간 위치의 정답률이 문서 없이 답할 때보다 낮기도 함 (GPT-3.5)','문서를 20개에서 50개로 늘려도 1~1.5%만 오름','context 창이 긴 모델이 context를 더 잘 쓰지는 않음']},
+  note:'필요한 정보가 긴 context의 중간에 있으면 잘 쓰지 못함 (다중 문서 QA, 문서 10~30개)', src:'Liu et al., 2023'},
+{sec:'Context Engineering', title:'Context engineering 개념', type:'canvas', h:380,
+  texts:[{x:0,y:0,t:'Prompt engineering',cls:'ct'},{x:600,y:0,t:'Context engineering',cls:'ct'},
+    {x:0,y:330,t:'한 번 작성한 지시',cls:'cc'},{x:600,y:340,t:'가능한 정보 중 이번 턴에 필요한 것만 고름',cls:'cc'}],
+  nodes:[{id:'p1',x:0,y:70,w:220,h:52,t:'System prompt'},{id:'p2',x:0,y:150,w:220,h:52,t:'User message'},
+    {id:'pc',x:280,y:110,w:220,h:52,t:'Context window'},{id:'pl',x:280,y:230,w:220,h:52,t:'LLM'},
+    {id:'s1',x:600,y:40,w:200,h:40,t:'System instructions'},{id:'s2',x:600,y:86,w:200,h:40,t:'Tools'},{id:'s3',x:600,y:132,w:200,h:40,t:'MCP'},
+    {id:'s6',x:600,y:178,w:200,h:40,t:'Agent Skills'},
+    {id:'s4',x:600,y:224,w:200,h:40,t:'외부 데이터'},{id:'s5',x:600,y:270,w:200,h:40,t:'Message history'},
+    {id:'cu',x:870,y:118,w:220,h:58,t:'선별 (Curation)',key:1},{id:'cw',x:870,y:204,w:220,h:44,t:'Context window'},{id:'cl',x:870,y:276,w:220,h:44,t:'LLM'}],
+  edges:[['p1','r','pc','l'],['p2','r','pc','l'],['pc','b','pl','t'],
+    ['s1','r','cu','l'],['s2','r','cu','l'],['s3','r','cu','l'],['s6','r','cu','l'],['s4','r','cu','l'],['s5','r','cu','l'],
+    ['cu','b','cw','t'],['cw','b','cl','t'],['cl','r','cu','r',{label:'매 턴',dash:1,out:24}]],
+  note:'한 번 쓰는 지시가 아니라, 매 턴 context에 들어갈 정보를 고르는 일',
+  src:'Anthropic, Effective context engineering for AI agents (2025-09)의 그림을 다시 그림 · Agent Skills는 발표자가 더함'},
+{sec:'Context Engineering', title:'Context engineering 원칙', type:'flow', plain:1, steps:[
+  {t:'부족', c:'판단 근거 없음'},
+  {t:'적정', c:'다음 판단에 필요한 정보만', key:1},
+  {t:'과잉', c:'주의 분산 · 비용 증가'}],
+  note:'부족하지도 넘치지도 않게: "the smallest possible set of high-signal tokens"', src:'Anthropic, 2025'},
+{sec:'Context Engineering', title:'Context engineering 대상', type:'cards', cols:3, cards:[
+  {t:'System prompt', c:'역할 · 규칙 · 작업 방식'},
+  {t:'Tool · Skill schema', c:'이름 · 설명 · 입력 형식'},
+  {t:'Plan · 현재 작업', c:'남은 단계와 지금 할 일'},
+  {t:'최근 대화 · Tool 이벤트', c:'필요한 것만 선별'},
+  {t:'Tool 결과 압축', c:'긴 출력 요약 · Compaction'}],
+  note:'context에 들어가는 모든 것이 관리 대상'},
+{sec:'Context Engineering', title:'Context engineering 구현', type:'hub',
+  center:{t:'Context engineering'},
+  right:[{t:'Hook', c:'턴 시작 · context 조립 지점에서 추가'},{t:'Middleware · Callback', c:'모델 호출 전 messages 수정'},{t:'Plugin', c:'하니스에 context 처리 추가'},{t:'Compaction', c:'오래된 기록을 요약으로 교체'}],
+  note:'하니스가 정해진 지점에 끼우는 코드로 context를 조립하고 줄임',
+  src:'예: Pi context, opencode session.context, OpenClaw before_prompt_build'},
+
+{sec:'Agent Skills', title:'Agent Skills 개념', type:'flow', steps:[
+  {t:'Metadata', c:'name · description\n시작할 때 모든 skill (~100 토큰)'},
+  {t:'SKILL.md 본문', c:'skill이 활성화될 때\n5,000 토큰 미만 권장', key:1},
+  {t:'Resources', c:'scripts · references · assets\n필요할 때만'}],
+  note:'필요할 때만 불러오는 특정 작업의 지시서: 평소에는 이름과 설명만 context에 둠',
+  src:'Progressive disclosure · Agent Skills spec, Anthropic engineering blog'},
+{sec:'Agent Skills', title:'Agent Skills 구성', type:'hub', lcap:'구성', rcap:'역할 (발표자 해석)',
+  left:[{t:'SKILL.md', c:'필수 · name · description + 지시'},{t:'references/', c:'선택 · 참고 문서'},{t:'scripts/', c:'선택 · 실행 코드'},{t:'assets/', c:'선택 · 템플릿 · 이미지 · 데이터'}],
+  center:{t:'Agent Skill', c:'폴더 하나'},
+  right:[{t:'Instruction', c:'작업 방법'},{t:'Tool', c:'scripts/ 실행 (새 도구 정의는 아님)'},{t:'Context engineering', c:'필요한 만큼만 로드'}],
+  note:'지시, 실행 코드, 참고 자료를 한 폴더에 묶고 필요한 만큼만 불러오는 단위',
+  src:'Agent Skills spec (agentskills.io): name은 폴더 이름과 같음'},
+
+{sec:'Sub-agents', title:'Multi-agent 구조', type:'canvas', h:380,
+  texts:[{x:0,y:0,t:'중앙화 · 계층형',cls:'ct'},{x:620,y:0,t:'분산화 · 협업형 (swarm)',cls:'ct'},
+    {x:0,y:340,t:'중앙의 supervisor가 나눠 주고 결과를 모음',cls:'cc'},{x:620,y:340,t:'에이전트끼리 작업을 넘기며 협업',cls:'cc'}],
+  nodes:[{id:'o',x:150,y:70,w:240,h:60,t:'Supervisor',key:1},
+    {id:'w1',x:0,y:250,w:160,h:58,t:'Worker',c:'검색'},{id:'w2',x:190,y:250,w:160,h:58,t:'Worker',c:'분석'},{id:'w3',x:380,y:250,w:160,h:58,t:'Worker',c:'작성'},
+    {id:'a1',x:620,y:70,w:200,h:58,t:'Agent A',c:'접수'},{id:'a2',x:920,y:70,w:200,h:58,t:'Agent B',c:'처리'},{id:'a3',x:770,y:250,w:200,h:58,t:'Agent C',c:'검토'}],
+  edges:[['o','b','w1','t'],['o','b','w2','t'],['o','b','w3','t'],['a1','r','a2','l',{label:'작업 넘김'}],['a2','b','a3','r'],['a3','l','a1','b']],
+  note:'기능 · 역할 단위로 작업을 나눠 맡김', src:'Anthropic, Building Effective AI Agents (2025)'},
+{sec:'Sub-agents', title:'Sub-agent 목적', type:'hub',
+  left:[{t:'Main agent', c:'Tool call로 생성'}],
+  center:{t:'Sub-agent', c:'별도의 Agent loop'},
+  right:[{t:'Context 분리', c:'자기 context에서 작업'},{t:'격리', c:'도구 · 권한 제한'},{t:'효율', c:'요약만 반환 (1,000~2,000 토큰)'}],
+  note:'도구 호출로 띄운 별도 루프가 따로 일하고 결과만 돌려줌', src:'Anthropic, Effective context engineering (2025)'},
+
+{sec:'MCP', title:'MCP 개념', type:'hub',
+  left:[{t:'AI Agent', c:'Claude Code · IDE · 앱'}],
+  center:{t:'MCP', c:'Model Context Protocol'},
+  right:[{t:'Tool calling 표준화', c:'한 번 만든 서버를 여러 앱에서'},{t:'에이전트용 API', c:'설명 · 입력 형식을 함께 제공'}],
+  note:'에이전트와 도구를 잇는 방식을 표준으로 정한 프로토콜', src:'Model Context Protocol (Anthropic)'},
+{sec:'MCP', title:'MCP 구성요소', type:'cardscode',
+  cards:[{t:'Tools', c:'모델이 호출하는 함수', key:1},{t:'Resources', c:'사용자나 모델이 쓰는 context · 데이터'},{t:'Prompts', c:'사용자를 위한 메시지 템플릿 · workflow'}],
+  label:'Tool 정의 (tools/list 결과의 한 항목, 필수는 name · inputSchema)',
+  src:'MCP 스펙 2026-07-28 (schema.ts)',
+  code:'{\n  "name": "get_weather",\n  "description": "도시의 현재 날씨를 조회",\n  ⟦"inputSchema"⟧: {\n    "type": "object",\n    "properties": { "city": { "type": "string" } },\n    "required": ["city"]\n  }\n}',
+  note:'Tool 설명과 입력 스키마가 context로 들어가 모델이 바로 쓸 수 있음'},
+{sec:'MCP', title:'MCP 구조', type:'canvas', h:340,
+  boxes:[{id:'host',x:0,y:20,w:360,h:300,label:'Host (Claude Code 등)'}],
+  nodes:[{id:'c1',x:50,y:90,w:260,h:60,t:'MCP client'},{id:'c2',x:50,y:220,w:260,h:60,t:'MCP client'},
+    {id:'s1',x:470,y:90,w:270,h:60,t:'MCP server',c:'stdio (예: 로컬)',key:1},{id:'s2',x:470,y:220,w:270,h:60,t:'MCP server',c:'Streamable HTTP (예: 원격)',key:1},
+    {id:'r1',x:850,y:90,w:270,h:60,t:'파일 · Git'},{id:'r2',x:850,y:220,w:270,h:60,t:'외부 API · DB'}],
+  edges:[['c1','r','s1','l',{both:1,label:'JSON-RPC'}],['c2','r','s2','l',{both:1,label:'JSON-RPC'}],['s1','r','r1','l'],['s2','r','r2','l']],
+  note:'Host 안의 MCP client가 MCP server와 하나씩 연결해 도구를 씀', src:'MCP 스펙 architecture: host가 client를 만들고, client와 server는 1:1'},
+{sec:'MCP', title:'MCP 호출 과정', type:'seq', a:'MCP client', b:'MCP server', msgs:[
+  ['>','server/discover','선택 · 지원 버전 확인'],['<','result','서버 버전 · 기능'],
+  ['>','tools/list','+ _meta'],['<','result','tools · ttlMs · cacheScope'],
+  ['>','tools/call','get_weather + _meta'],['<','result','resultType: complete · content']],
+  side:[{t:'_meta (모든 요청)', c:'protocolVersion · clientCapabilities 필수\nclientInfo 권장'},{t:'2025-11-25판과 차이', c:'initialize 핸드셰이크와 ping 없음\n모든 결과에 resultType\n(input_required면 입력을 실어 다시 요청)'}],
+  note:'연결 절차 없이 요청마다 버전과 기능을 실어 보내는 stateless 방식',
+  src:'MCP 스펙 2026-07-28 (changelog, schema.ts)'},
+
+{sec:'Hook', title:'Hook 쓰임', type:'cards', cols:4, cards:[
+  {t:'판정 · 차단', c:'rm -rf · .env 편집 막기\nStop에서 테스트 확인', key:1},
+  {t:'알림', c:'입력이 필요할 때\n데스크톱 알림'},
+  {t:'자동 포맷', c:'파일 편집 뒤\nPrettier 실행'},
+  {t:'context 주입', c:'compaction 뒤 중요한\ncontext 다시 넣기'},
+  {t:'로그 · 감사', c:'실행한 명령 · 설정 변경\nskill 사용 기록'},
+  {t:'외부 연동', c:'이슈 트래커 폼 자동 입력\n공유 skill 저장소 갱신'},
+  {t:'세션 관리', c:'종료할 때 상태 저장\ncompaction 요약 지시'},
+  {t:'비용 표시', c:'대화 재개 비용\n토큰 수 확인'}],
+  note:'판정은 일부: Claude Code 공식 예시 약 40개 중 판정 · 검증은 5~6개',
+  src:'Claude Code hooks 문서 · 시작은 권한 확인 알림 요청 (Cat Wu 인터뷰)'},
+{sec:'Hook', title:'Hook 판정 구조', type:'table',
+  corner:'판정 지점 · 판정자',
+  cols:['규칙 (결정적)','모델 (확률적)','사람'],
+  rows:[
+    {h:'실행 전\n행동 판정 · Control', cells:['permission 규칙 (deny → ask → allow)\nPreToolUse hook','auto mode classifier\nPreToolUse prompt hook','PermissionRequest\n승인 (HITL)']},
+    {h:'멈추기 전\n결과 판정 · Verification', cells:['테스트 · 린트, CI\nStop hook','/goal 판정 (prompt Stop hook)\nverifier sub-agent · agent hook','코드 리뷰 · 승인']}],
+  foot:'판정 모델을 붙이는 방법: 내장 단계 (auto mode classifier) · hook (prompt · agent hook, /goal) · sub-agent 호출 (verifier)',
+  note:'루프의 정해진 지점에서 규칙, 모델, 사람이 통과 · 차단 · 계속을 정함 (넓은 뜻의 hook)',
+  src:'Claude Code 문서: hooks, permission modes, /goal'},
+{sec:'Hook · Controls', title:'Controls 개념', type:'hub', leftStyle:'dash', legend:[['dash','원인'],['solid','대응']],
+  left:[{t:'비결정성', c:'같은 입력에도 다른 행동'}],
+  center:{t:'Controls'},
+  right:[{t:'Permission 규칙', c:'allow · ask · deny'},{t:'Hook', c:'정해진 시점에 검사 · 차단'},{t:'Sandbox', c:'실행 환경 격리'}],
+  note:'모델 판단에 맡기지 않고 정해진 규칙으로 동작을 통과 · 차단'},
+{sec:'Controls · Sandbox', title:'Sandbox 필요성', type:'hub', leftStyle:'dash', legend:[['dash','사고 사례']],
+  left:[{t:'운영 DB 삭제', c:'Replit 에이전트 사례'},{t:'이메일 200통 이상 삭제', c:'compaction이 "실행하지 말 것"을 누락'}],
+  center:{t:'Sandbox'},
+  right:[{t:'피해 범위 제한', c:'격리된 환경 안에서만'},{t:'되돌릴 수 있는 실행', c:'복사본 · 스냅샷'}],
+  note:'에이전트가 실수해도 피해가 격리된 환경 밖으로 나가지 않게',
+  src:'Raj 2026 (이메일 사례) · Lynch 2025 참고문헌 (Replit 사례)'},
+{sec:'Controls · Sandbox', title:'Sandbox 구현', type:'cards', cols:2, cards:[
+  {t:'OS sandbox', c:'macOS Seatbelt · Linux bubblewrap\n(Claude Code, Codex)'},
+  {t:'컨테이너', c:'Docker 런타임 (OpenHands) · devcontainer'},
+  {t:'네트워크 허용 목록', c:'기본 차단, 허용한 주소만\n(devcontainer 방화벽)'},
+  {t:'명령 규칙', c:'deny → ask → allow 순서로 판정\n예: Bash(aws *)'}],
+  note:'에이전트가 닿는 파일, 네트워크, 명령의 범위를 실행 환경에서 제한',
+  src:'Claude Code 문서 · Codex, OpenHands 코드'},
+
+{sec:'Hook · Verification', title:'조기 종료', type:'flow', steps:[
+  {t:'작업 지시', c:'테스트 10개 통과시키기'},
+  {t:'작업 진행', c:'7개 통과'},
+  {t:'완료 보고', c:'"모두 끝났습니다"', key:1},
+  {t:'남은 작업', c:'실패 3개'}],
+  note:'작업이 남았는데 끝났다고 판단하고 멈춤 (Stops before the task is done)', src:'예시'},
+{sec:'Hook · Verification', title:'Goal loop 구현', type:'hub',
+  left:[{t:'조기 종료'}],
+  center:{t:'Goal loop', c:'목표를 이룰 때까지 다시 돌림'},
+  right:[{t:'Stop hook', c:'종료를 막고 계속'},{t:'Planning · Tasks', c:'남은 단계 확인'},{t:'목표 조건 판정', c:'매 턴 끝에 작은 모델이 판정'},{t:'Ralph loop · /goal', c:'2025-07 Ralph → 2026 제품별 /goal'}],
+  note:'Claude Code의 /goal은 Stop hook을 감싼 것: 매 턴 끝에 조건을 판정해 이룰 때까지 계속',
+  src:'Huntley 2025-07 (Ralph) · /goal: Codex, Hermes, Claude Code, OpenClaw, opencode (2026)'},
+{sec:'Hook · Verification', title:'Verifier 검증 루프', type:'loop',
+  nodes:[{t:'Explore', c:'gather context'},{t:'Plan', c:'계획'},{t:'Act', c:'take action'},{t:'Verify', c:'verify results', key:1}],
+  center:{t:'Plan-Execute-Verify'},
+  note:'별도 verifier가 새 context에서 결과를 확인하고, 실패하면 다시 계획',
+  src:'Claude Code 문서 (gather context, take action, verify results) · Ning 2026 (PEV loop) · Zhang 2026 (새 context의 critic)'},
+
+{sec:'General-Purpose AI Agent', title:'General-Purpose AI Agent 구조', type:'canvas', h:392, legend:[['dash','실행 순서가 아닌 관계']],
+  boxes:[{id:'loop',x:250,y:28,w:860,h:360,label:'goal 루프 · 목표를 이룰 때까지 다시 돌림'},
+    {id:'hm',x:690,y:58,w:210,h:100,label:'hook: 모델 호출 전후',sub:1},
+    {id:'ht',x:480,y:236,w:420,h:100,label:'hook: 도구 호출 전후',sub:1}],
+  nodes:[{id:'n1',x:280,y:92,w:170,h:56,t:'① context 조립'},{id:'n2',x:490,y:92,w:170,h:56,t:'② compaction 확인'},
+    {id:'nm',x:710,y:92,w:170,h:56,t:'모델 호출',key:1},{id:'n6',x:930,y:270,w:160,h:56,t:'⑥ 멈추기 전 검증'},
+    {id:'n3',x:710,y:270,w:170,h:56,t:'③ permission · sandbox'},{id:'n4',x:500,y:270,w:170,h:56,t:'④ 도구 실행'},{id:'n5',x:280,y:270,w:170,h:56,t:'⑤ loop guard'},
+    {id:'sk',x:0,y:92,w:210,h:56,t:'skills · 장기 memory'},{id:'ss',x:0,y:180,w:210,h:56,t:'세션 저장 (transcript)'},{id:'sa',x:0,y:330,w:210,h:56,t:'sub-agent (같은 루프)'}],
+  edges:[['n1','r','n2','l'],['n2','r','nm','l'],['nm','b','n3','t',{label:'도구 호출 있음'}],['n3','l','n4','r'],['n4','l','n5','r'],['n5','t','n1','b',{label:'계속'}],
+    ['nm','r','n6','t',{label:'도구 호출 없음'}],['sk','r','n1','l',{dash:1}],['loop','l','ss','r',{dash:1}],['n4','b','sa','r',{dash:1}]],
+  note:'지금까지의 구현요소가 한 턴의 흐름 안에 모임', src:'에이전트 구성요소 매트릭스 보드의 구현요소 흐름'},
+{sec:'General-Purpose AI Agent', title:'General-Purpose AI Agent 사례', type:'cards', cols:2, cards:[
+  {t:'개발', c:'코드 작성 · 테스트 · PR\n예: Claude Code, Codex CLI, Cursor'},
+  {t:'그래픽 · 디자인', c:'브리프로 웹사이트 제작\nBlender · CAD · SVG 작업'},
+  {t:'데이터 분석', c:'데이터 탐색 · 분석 · 보고\n예: agentic data scientist'},
+  {t:'연구', c:'자료 조사 · 실험 자동화\n예: Deep Research 에이전트'}],
+  note:'같은 루프와 도구 구성으로 여러 분야의 작업을 수행',
+  src:'Frontier Design Benchmark (2026), 그래픽스 에이전트 서베이, AutoData 등'},
+
+{sec:'Evaluation', title:'Evaluation 방법론', type:'cards', cols:3, cards:[
+  {t:'실제 과제 eval 세트', c:'최근 실제 과제 20~50개', key:1},
+  {t:'CI에서 다시 실행', c:'CLAUDE.md · 스킬 · 훅이 바뀔 때'},
+  {t:'통과율 게이트', c:'머지 검사로 강제'},
+  {t:'인시던트 → eval', c:'사고를 영구 테스트로'},
+  {t:'결과 기록', c:'시간에 따라 비교'}],
+  note:'하니스 설정이 바뀔 때마다 실제 과제로 다시 재고 통과율로 막음',
+  src:'Anthropic, AI-Native SDLC Playbook (2026), 요약'},
+{sec:'Evaluation', title:'Evaluation 확장', type:'flow', steps:[
+  {t:'명확한 사용 사례', c:'자주 하는 실제 작업', key:1},
+  {t:'작은 eval 세트', c:'실제 과제 · 실패 사례'},
+  {t:'측정', c:'통과율 · 실패 유형'},
+  {t:'확장', c:'사례와 세트를 넓힘'}],
+  note:'명확한 사용 사례에서 시작해 측정이 뒷받침할 때 범위를 넓힘',
+  src:'Anthropic, Building Effective AI Agents (2025) · Demystifying evals (2026)'}
+];
+
+/* ---------- 쪽 번호 ---------- */
+/* 섹션 이름(sec)이나 장 제목으로 쪽을 찾습니다. 본문에는 ⟨첫|끝⟩ 꼴로 적으면 그릴 때 "31–40"처럼 바뀝니다.
+   장을 더하거나 옮겨도 목차와 본문의 쪽 표시가 맞습니다. 못 찾으면 "?"로 둡니다 */
+const SECP={}, TITLEP={};
+S.forEach((s,i)=>{ const p=i+1; if(s.title && !TITLEP[s.title]) TITLEP[s.title]=p; if(s.sec){ const r=SECP[s.sec]||(SECP[s.sec]=[p,p]); r[1]=p; } });
+function pageSpan(a,b=a){
+  const x=SECP[a]?SECP[a][0]:TITLEP[a], y=SECP[b]?SECP[b][1]:TITLEP[b];
+  if(!x||!y){ console.warn('쪽 참조를 찾지 못함:', a, b); return ['?','?']; }
+  return [x,y];
+}
+const pageRefs = h => h.replace(/⟨([^⟩|]+)(?:\|([^⟩]+))?⟩/g, (_,a,b)=>{ const [x,y]=pageSpan(a,b||a); return x===y?`${x}`:`${x}–${y}`; });
+
+/* ---------- 그리기 ---------- */
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const br = s => esc(s).replace(/\n/g,'<br>');
+const hl = s => esc(s).replace(/⟦(.*?)⟧/g,'<span class="k">$1</span>').replace(/⟪(.*?)⟫/g,'<span class="m">$1</span>');
+const pill = (d, cls='', style='') =>
+  `<div class="pill${d.key?' key':''}${cls?' '+cls:''}"${style?` style="${style}"`:''}><div class="t">${br(d.t)}</div>${d.c?`<div class="c">${br(d.c)}</div>`:''}</div>`;
+const arrow = (dash, cls='', plain=false) => `<div class="arr${dash?' dash':''}${cls?' '+cls:''}"><b></b>${plain?'':'<i class="hd"></i>'}</div>`;
+
+function hub(s){
+  const L=s.left||[], R=s.right||[], n=Math.max(L.length,R.length,1);
+  const ph = n>=4 ? 70 : 76, gap = n>=4 ? 16 : 18;
+  /* rgroup: 오른쪽이 가운데 노드 안의 단계일 때. 단계를 상자 하나로 묶고, 가운데에서 상자로 가는 화살표는 하나만 둡니다 */
+  const VG = 30, PAD = 20;
+  const H = s.rgroup ? Math.max(L.length*ph+(L.length-1)*gap, R.length*ph+(R.length-1)*VG+2*PAD) : n*ph+(n-1)*gap;
+  let h=`<div class="hub" style="height:${H}px;--ph:${ph}px;--gap:${gap}px">`;
+  if(L.length) h+=`<div class="col">${s.lcap?`<div class="ccap">${esc(s.lcap)}</div>`:''}${L.map(d=>pill(d)).join('')}</div>`+
+    `<div class="arrows${R.length?'':' fixed'}">${L.map(()=>arrow(s.leftStyle==='dash')).join('')}</div>`;
+  /* 묶음 상자가 더 높아도 가운데 노드는 다른 hub 장과 같은 높이로 둡니다 */
+  h+=pill({...s.center,key:1},'center', s.rgroup?`align-self:center;height:${n*ph+(n-1)*gap}px`:'');
+  if(R.length && s.rgroup) h+=`<div class="arrows${L.length?'':' fixed'}">${arrow(s.rightStyle==='dash')}</div>`+
+    `<div class="col grp">${s.rcap?`<div class="ccap">${esc(s.rcap)}</div>`:''}${R.map((d,i)=>(i?'<div class="varr"><b></b><i></i></div>':'')+pill(d)).join('')}</div>`;
+  else if(R.length) h+=`<div class="arrows${L.length?'':' fixed'}">${R.map(()=>arrow(s.rightStyle==='dash')).join('')}</div>`+
+    `<div class="col">${s.rcap?`<div class="ccap">${esc(s.rcap)}</div>`:''}${R.map(d=>pill(d)).join('')}</div>`;
+  h+='</div>';
+  if(s.chips) h=`<div class="stackv">${h}<div class="chips">${esc(s.chips.label)}: ${s.chips.items.map(t=>`<span>${esc(t)}</span>`).join('')}</div></div>`;
+  return h;
+}
+function flow(s, steps=s.steps){
+  const dense = steps.length>4 || steps.some(d=>d.t.length>16);
+  let h=`<div class="flow${dense?' dense':''}">`;
+  steps.forEach((d,i)=>{
+    if(i) h+=arrow(false,'link',!!s.plain);
+    h+=`<div class="step">${pill({t:d.t,key:d.key})}${d.c?`<div class="cap">${br(d.c)}</div>`:''}</div>`;
+  });
+  return h+'</div>';
+}
+function flows(s){ return `<div class="flows">${s.rows.map(r=>`<div class="frow"><div class="flab">${esc(r.label)}</div>${flow(s,r.steps)}</div>`).join('')}</div>`; }
+function pairs(s){
+  const arr = r => arrow((r.style||s.style)==='dash');
+  if(!s.rows.some(r=>r.b&&r.b.span)) return `<div class="pairs">${s.rows.map(r=>`<div class="prow">${pill(r.a,'pa')}${arr(r)}${pill(r.b,'pb')}</div>`).join('')}</div>`;
+  /* 오른쪽 노드 하나가 여러 줄에 걸칠 때(b.span): 격자로 그리고, 걸쳐진 줄은 b를 비웁니다 */
+  return `<div class="pairs grid">${s.rows.map(r=>pill(r.a,'pa')+arr(r)+(r.b?pill(r.b,'pb'+(r.b.span?' span':''),r.b.span?`grid-row:span ${r.b.span}`:''):'')).join('')}</div>`;
+}
+function table(s){
+  const head=`<tr><th class="corner">${br(s.corner||'')}</th>${s.cols.map(c=>`<th>${br(c)}</th>`).join('')}</tr>`;
+  const rows=s.rows.map(r=>`<tr><th class="rh">${br(r.h)}</th>${r.cells.map(c=>`<td>${br(c)}</td>`).join('')}</tr>`).join('');
+  /* widths: 머리 열 뒤 열들의 너비, compact: 칸 안 여백을 줄임 */
+  const cg = s.widths ? `<colgroup><col style="width:250px">${s.widths.map(w=>`<col style="width:${w}">`).join('')}</colgroup>` : '';
+  return `<div class="tblwrap"><table class="jt${s.compact?' compact':''}">${cg}${head}${rows}</table>${s.foot?`<div class="tfoot2">${br(s.foot)}</div>`:''}</div>`;
+}
+function cards(s){ return `<div class="cards" style="grid-template-columns:repeat(${s.cols||3},1fr)">${s.cards.map(d=>`<div class="card${d.key?' key':''}"><div class="t">${br(d.t)}</div>${d.c?`<div class="c">${br(d.c)}</div>`:''}</div>`).join('')}</div>`; }
+/* wrap: 긴 줄을 상자 안에서 접어 보입니다(접힌 줄은 2칸 들여 원래 줄과 구분). 빈 줄은 반 줄 높이로 */
+const codeBlock = (label, code, fs, wrap, cls='') => `<div class="cblk${cls?' '+cls:''}">${label?`<div class="lab">${esc(label)}</div>`:''}${wrap
+  ? `<div class="code wrap"${fs?` style="font-size:${fs}px"`:''}>${code.split('\n').map(l=>l?`<div class="ln">${hl(l)}</div>`:'<div class="ln gap"></div>').join('')}</div>`
+  : `<pre class="code"${fs?` style="font-size:${fs}px"`:''}>${hl(code)}</pre>`}</div>`;
+const aside = list => list ? `<div class="aside">${list.map(d=>pill(d)).join('')}</div>` : '';
+function code(s){ return `<div class="cwrap">${codeBlock(s.label,s.code,s.fs,s.wrap,s.wrap?'grow':'')}${aside(s.aside)}</div>`; }
+function code2(s){
+  const [a,b]=s.blocks, fs=s.fs||18;
+  /* 접는 블록은 남는 너비를 채우고, 다른 블록은 제 너비를 지킵니다 */
+  const cl = (x,y) => x.wrap ? 'grow' : (y.wrap ? 'fix' : '');
+  const row=`<div class="cwrap" style="justify-content:center">${codeBlock(a.label,a.code,a.fs||fs,a.wrap,cl(a,b))}${arrow(false,'w48')}${codeBlock(b.label,b.code,b.fs||fs,b.wrap,cl(b,a))}</div>`;
+  if(!s.aside) return row;
+  return `<div class="stackv" style="gap:30px">${row}<div style="display:flex;gap:18px;justify-content:center">${s.aside.map(d=>pill(d,'','height:76px;width:330px')).join('')}</div></div>`;
+}
+/* 입력 하나 → 출력 여러 개(예: 같은 지시의 성공과 실패) */
+function codefan(s){
+  const fs=s.fs||15;
+  const outs=s.outs.map(o=>codeBlock(o.label,o.code,fs)).join('');
+  const row=`<div class="cwrap" style="justify-content:center">${codeBlock(s.input.label,s.input.code,fs,0,'fix')}${arrow(false,'w48')}<div style="display:flex;flex-direction:column;gap:16px;min-width:0">${outs}</div></div>`;
+  if(!s.aside) return row;
+  return `<div class="stackv" style="gap:24px">${row}<div style="display:flex;gap:18px;justify-content:center">${s.aside.map(d=>pill(d,'','height:76px;width:330px')).join('')}</div></div>`;
+}
+function codeflow(s){ return `<div style="display:flex;flex-direction:column;gap:30px;width:100%">${flow(s)}${codeBlock('',s.code,s.fs)}</div>`; }
+function cardscode(s){ return `<div class="cwrap"><div style="width:330px;flex:none">${cards({cards:s.cards,cols:1})}</div>${codeBlock(s.label,s.code,17)}</div>`; }
+function chat(s){ return `<div class="chat"><div class="bubble"><span class="lab">${esc(s.ql)}</span>${br(s.q)}</div><div class="bubble a"><span class="lab">${esc(s.al)}</span>${br(s.a)}</div></div>`; }
+function tokens(s){
+  let h='<div class="tok">';
+  s.steps.forEach(st=>{
+    h+='<div class="trow"><div class="ctx">'+st.ctx.map((t,i)=>`<span class="${i===st.newIdx?'new':''}">${esc(t)}</span>`).join('')+'</div>';
+    h+=arrow(false,'w48')+pill({t:'LLM'},'llm')+arrow(false,'w48');
+    h+='<div class="probs">'+st.cands.map(([w,p])=>`<div class="bar${w===st.pick?' pick':''}"><span class="w">${esc(w)}</span><i style="width:${Math.max(8,Math.round(p*240))}px"></i><span class="p">${p.toFixed(2)}</span></div>`).join('')+'</div></div>';
+  });
+  return h+`<div class="tfoot">${esc(s.foot)}</div></div>`;
+}
+function layers(s){
+  let h=`<div class="layers">${pill({t:s.key,key:1},'center')}<div class="arrows">${s.rows.map(()=>arrow(false)).join('')}</div><div class="lrows">`;
+  s.rows.forEach(r=>{ h+=`<div class="lrow"><div class="llab"><b>${esc(r.label)}</b><span>${esc(r.cap)}</span></div>${r.items.map(t=>pill({t})).join('')}</div>`; });
+  return h+'</div></div>';
+}
+function equation(s){
+  return `<div class="eq"><div class="eqrow">${s.items.map(t=>pill({t})).join('<span class="op">+</span>')}</div><div class="eqrow"><span class="op">=</span>${pill({t:s.result,key:1},'big')}</div></div>`;
+}
+
+/* 캔버스: 노드 좌표를 정해 두고 화살표는 꺾은선으로 잇습니다 */
+function sidePt(n, s){
+  if(s==='l') return [n.x, n.y+n.h/2];
+  if(s==='r') return [n.x+n.w, n.y+n.h/2];
+  if(s==='t') return [n.x+n.w/2, n.y];
+  return [n.x+n.w/2, n.y+n.h];
+}
+function route(a, fs, b, ts, out=34){
+  const p=sidePt(a,fs), q=sidePt(b,ts), H=s=>s==='l'||s==='r', pts=[p];
+  if(H(fs)&&H(ts)){
+    if(fs===ts){ const x = fs==='r' ? Math.max(p[0],q[0])+out : Math.min(p[0],q[0])-out; pts.push([x,p[1]],[x,q[1]]); }
+    else if(Math.abs(p[1]-q[1])>1){ const mx=(p[0]+q[0])/2; pts.push([mx,p[1]],[mx,q[1]]); }
+  } else if(!H(fs)&&!H(ts)){
+    if(fs===ts){ const y = fs==='b' ? Math.max(p[1],q[1])+out : Math.min(p[1],q[1])-out; pts.push([p[0],y],[q[0],y]); }
+    else if(Math.abs(p[0]-q[0])>1){ const my=(p[1]+q[1])/2; pts.push([p[0],my],[q[0],my]); }
+  } else if(H(fs)) pts.push([q[0],p[1]]);
+  else pts.push([p[0],q[1]]);
+  pts.push(q);
+  return pts;
+}
+function labelAt(pts){
+  let best=0, at=[0,0];
+  for(let i=1;i<pts.length;i++){
+    const [x1,y1]=pts[i-1], [x2,y2]=pts[i], d=Math.hypot(x2-x1,y2-y1);
+    if(d>best){ best=d; at=[(x1+x2)/2,(y1+y2)/2]; }
+  }
+  return at;
+}
+function canvas(s){
+  const W=1120, H=s.h||380, all={};
+  (s.nodes||[]).forEach(n=>all[n.id]=n); (s.boxes||[]).forEach(b=>all[b.id]=b);
+  let h=`<div class="cv" style="height:${H}px">`;
+  (s.boxes||[]).forEach(b=>{ h+=`<div class="cbox${b.sub?' sub':''}" style="left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px"><span>${esc(b.label)}</span></div>`; });
+  let svg=`<svg class="cvs" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">`, labels='';
+  (s.edges||[]).forEach(([a,fs,b,ts,o={}])=>{
+    const pts=route(all[a],fs,all[b],ts,o.out);
+    svg+=`<path d="M${pts.map(p=>p.map(v=>v.toFixed(1)).join(' ')).join(' L')}" class="${o.dash?'dash':''}" marker-end="url(#ah)"${o.both?' marker-start="url(#ahs)"':''}/>`;
+    if(o.label){ const [x,y]=labelAt(pts); labels+=`<text x="${x.toFixed(1)}" y="${(y+5).toFixed(1)}" class="el">${esc(o.label)}</text>`; }
+  });
+  h+=svg+labels+'</svg>';
+  (s.nodes||[]).forEach(n=>{ h+=`<div class="pill cnode${n.key?' key':''}" style="left:${n.x}px;top:${n.y}px;width:${n.w}px;height:${n.h}px"><div class="t">${br(n.t)}</div>${n.c?`<div class="c">${br(n.c)}</div>`:''}</div>`; });
+  (s.texts||[]).forEach(t=>{ h+=`<div class="ctext ${t.cls||''}" style="left:${t.x}px;top:${t.y}px">${esc(t.t)}</div>`; });
+  return h+'</div>';
+}
+
+/* 루프: 타원 궤도 위에 노드를 두고 노드 사이에 방향 표시 */
+function loop(s){
+  const W=1120, H=400, cx=560, cy=210, rx=330, ry=130, n=s.nodes.length, ty=cy-ry;
+  const ang=i=>-Math.PI/2+i*2*Math.PI/n;
+  let svg=`<svg class="cvs" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true"><ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" class="track"/>`;
+  for(let i=0;i<n;i++){
+    const m=ang(i)+Math.PI/n, hx=cx+rx*Math.cos(m), hy=cy+ry*Math.sin(m);
+    const deg=Math.atan2(ry*Math.cos(m), -rx*Math.sin(m))*180/Math.PI;
+    svg+=`<path d="M-10,-8 L10,0 L-10,8 z" class="lh" transform="translate(${hx.toFixed(1)} ${hy.toFixed(1)}) rotate(${deg.toFixed(1)})"/>`;
+  }
+  if(s.entry) svg+=`<line x1="206" y1="${ty}" x2="${cx-117}" y2="${ty}" marker-end="url(#ah)"/>`;
+  if(s.exit) svg+=`<line x1="${cx+117}" y1="${ty}" x2="${W-206}" y2="${ty}" marker-end="url(#ah)"/>`;
+  svg+='</svg>';
+  const ap=(d,x,y,w)=>`<div class="pill ap${d.key?' key':''}" style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px;${w?`width:${w}px`:''}"><div class="t">${br(d.t)}</div>${d.c?`<div class="c">${br(d.c)}</div>`:''}</div>`;
+  let h=`<div class="lp" style="height:${H}px">${svg}`;
+  s.nodes.forEach((d,i)=>{ const a=ang(i); h+=ap(d, cx+rx*Math.cos(a), cy+ry*Math.sin(a), 230); });
+  if(s.center) h+=ap({...s.center,key:1}, cx, cy);
+  if(s.entry) h+=ap(s.entry, 103, ty, 200);
+  if(s.exit) h+=ap(s.exit, W-103, ty, 200);
+  return h+'</div>';
+}
+
+/* 시퀀스 */
+function seq(s){
+  const side=s.side, W=side?720:900, x1=side?120:170, x2=side?600:730, top=86, step=40, H=top+(s.msgs.length-1)*step+24;
+  let svg=`<svg class="cvs" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">`+
+    `<line x1="${x1}" y1="50" x2="${x1}" y2="${H}" class="life"/><line x1="${x2}" y1="50" x2="${x2}" y2="${H}" class="life"/>`;
+  s.msgs.forEach(([d,m,txt],i)=>{
+    const y=top+i*step, a=d==='>'?x1:x2, b=d==='>'?x2:x1;
+    svg+=`<line x1="${a}" y1="${y}" x2="${b + (d==='>'?-2:2)}" y2="${y}" class="${d==='<'?'ret':''}" marker-end="url(#ah)"/>`;
+    svg+=`<text x="${(x1+x2)/2}" y="${y-9}" class="ml">${esc(m)}${txt?`<tspan class="md">  ${esc(txt)}</tspan>`:''}</text>`;
+  });
+  svg+='</svg>';
+  const sq=`<div class="sq" style="width:${W}px;height:${H}px">${svg}${pill({t:s.a},'head','left:'+x1+'px')}${pill({t:s.b,key:1},'head','left:'+x2+'px')}</div>`;
+  if(!side) return sq;
+  return `<div class="cwrap" style="justify-content:center;gap:40px">${sq}<div style="width:330px;flex:none">${cards({cards:side,cols:1})}</div></div>`;
+}
+
+/* Transformer 블록 */
+function attention(s){
+  const blocks=[['다음 토큰 확률',''],['Feed-forward',''],['Self-attention','key'],['Embedding + Positional encoding','pos'],['입력 토큰','']];
+  let stk='<div class="stk">';
+  blocks.forEach(([t,c],i)=>{ if(i) stk+='<div class="conn"></div>'; stk+=`<div class="blk ${c}">${esc(t)}</div>`; });
+  stk+='<div class="rep"><span>× N층</span></div></div>';
+  const co=`<div class="callouts">${s.items.map(d=>`<div class="co"><div class="t">${esc(d.t)}</div><div class="c">${br(d.c)}</div></div>`).join('')}${s.foot?`<div class="cfoot">${esc(s.foot)}</div>`:''}</div>`;
+  let g='<div><div class="agrid">';
+  for(let r=0;r<8;r++) for(let c=0;c<8;c++) g+=`<i class="${c<=r?'f':''}"></i>`;
+  g+='</div><div class="gcap">토큰 n개 → n×n 쌍</div></div>';
+  return `<div class="attn">${stk}${co}${g}</div>`;
+}
+
+/* U자 곡선 (개념도) */
+function curve(s){
+  const svg=`<svg width="560" height="330" viewBox="0 0 560 330" role="img" aria-label="관련 정보의 위치에 따른 정확도 개념도">
+    <line x1="60" y1="30" x2="60" y2="270" stroke="#1A1A18" stroke-width="2"/>
+    <line x1="60" y1="270" x2="540" y2="270" stroke="#1A1A18" stroke-width="2"/>
+    <path d="M80 70 C 200 250, 400 250, 520 100" fill="none" stroke="#F0591E" stroke-width="4"/>
+    <circle cx="80" cy="70" r="6" fill="#F0591E"/><circle cx="300" cy="206" r="6" fill="#F0591E"/><circle cx="520" cy="100" r="6" fill="#F0591E"/>
+    <text x="80" y="296" text-anchor="middle" font-size="17" fill="#1A1A18">처음</text>
+    <text x="300" y="296" text-anchor="middle" font-size="17" fill="#1A1A18">중간</text>
+    <text x="520" y="296" text-anchor="middle" font-size="17" fill="#1A1A18">끝</text>
+    <text x="300" y="324" text-anchor="middle" font-size="15" fill="#55554F">관련 정보의 위치</text>
+    <text x="22" y="150" text-anchor="middle" font-size="15" fill="#55554F" transform="rotate(-90 22 150)">정확도</text>
+    <text x="540" y="24" text-anchor="end" font-size="14" fill="#55554F">개념도 (수치 없음)</text>
+  </svg>`;
+  return `<div class="curve">${svg}<div class="cside"><h3>${esc(s.side.t)}</h3>${s.side.items.map(t=>`<div>${esc(t)}</div>`).join('')}</div></div>`;
+}
+
+function toc(s){
+  const half=Math.ceil(s.items.length/2), cols=[s.items.slice(0,half), s.items.slice(half)];
+  const row=([name,a=name,b=a])=>{ const [x,y]=pageSpan(a,b); return `<a data-go="${x}"><span>${esc(name)}</span><span>${x===y?x:`${x}–${y}`}</span></a>`; };
+  return `<div class="toc">${cols.map(c=>`<div>${c.map(row).join('')}</div>`).join('')}</div>`;
+}
+
+const R={hub,flow,flows,pairs,cards,table,code,code2,codefan,codeflow,cardscode,chat,tokens,layers,equation,canvas,loop,seq,attention,curve,toc};
+
+function render(s, i){
+  if(s.type==='title') return `<section class="slide title-slide" data-i="${i}"><div class="kicker">${esc(s.kicker)}</div><div class="tl"><div class="bar"></div><h1>${br(s.title)}</h1><div class="sub">${esc(s.sub)}</div></div><div class="by">${esc(s.by)}</div></section>`;
+  const num=String(i+1).padStart(2,'0');
+  const legend=s.legend?`<div class="legend">${s.legend.map(([k,t])=>`<span><b class="${k==='dash'?'dash':''}"></b>${esc(t)}</span>`).join('')}</div>`:'';
+  const src=s.src?`<div>${esc(s.src)}</div>`:'';
+  return `<section class="slide" data-i="${i}"><header class="sh"><h2>${esc(s.title)}</h2><div class="meta">${s.check?'<span class="chk">확인 중</span>':''}${s.sec?`<span>${esc(s.sec)}</span>`:''}<span>${num}</span></div></header>`+
+    `<div class="body">${R[s.type](s)}</div>`+
+    `<footer class="sf"><div class="note">${s.note?`<i></i><p>${br(s.note)}</p>`:''}</div><div class="side-info">${legend}${src}</div></footer></section>`;
+}
+
+/* ---------- 조작 ---------- */
+const stage=document.getElementById('stage');
+stage.innerHTML=pageRefs(S.map(render).join(''));
+const slides=[...stage.querySelectorAll('.slide')];
+const cnt=document.getElementById('cnt'), list=document.getElementById('list');
+let cur=0;
+function go(i){
+  i=Math.max(0,Math.min(slides.length-1,i|0));
+  slides[cur].classList.remove('on'); cur=i; slides[cur].classList.add('on');
+  cnt.textContent=`${cur+1} / ${slides.length}`;
+  /* 샌드박스 미리보기(origin null)에서는 주소를 바꿀 수 없어 SecurityError가 나므로 실패해도 넘어갑니다 */
+  if(location.hash!=='#'+(cur+1)){ try{ history.replaceState(null,'','#'+(cur+1)); }catch(e){} }
+}
+function fit(){
+  const s=Math.min(innerWidth/1280, innerHeight/720)*0.96;
+  document.documentElement.style.setProperty('--s', s.toFixed(4));
+}
+list.querySelector('.box').innerHTML=S.map((s,i)=>`<button type="button" data-go="${i+1}"><span>${i+1}</span>${esc(s.title)}</button>`).join('');
+function toggleList(open){ list.classList.toggle('open', open ?? !list.classList.contains('open')); }
+document.addEventListener('click',e=>{
+  const g=e.target.closest('[data-go]');
+  if(g){ go(+g.dataset.go-1); toggleList(false); return; }
+  if(e.target===list) toggleList(false);
+});
+document.getElementById('prev').onclick=()=>go(cur-1);
+document.getElementById('next').onclick=()=>go(cur+1);
+document.getElementById('openList').onclick=()=>toggleList();
+addEventListener('keydown',e=>{
+  if(e.key==='Escape'){ toggleList(false); return; }
+  if(list.classList.contains('open')) return;
+  if(['ArrowRight','ArrowDown','PageDown',' '].includes(e.key)){ e.preventDefault(); go(cur+1); }
+  else if(['ArrowLeft','ArrowUp','PageUp','Backspace'].includes(e.key)){ e.preventDefault(); go(cur-1); }
+  else if(e.key==='Home') go(0);
+  else if(e.key==='End') go(slides.length-1);
+  else if(e.key==='g'||e.key==='G') toggleList();
+});
+let x0=null;
+addEventListener('touchstart',e=>{ x0=e.touches[0].clientX; },{passive:true});
+addEventListener('touchend',e=>{ if(x0===null) return; const dx=e.changedTouches[0].clientX-x0; if(Math.abs(dx)>40) go(cur+(dx<0?1:-1)); x0=null; });
+addEventListener('hashchange',()=>{ const n=parseInt(location.hash.slice(1),10); if(n) go(n-1); });
+addEventListener('resize',fit);
+fit();
+go((parseInt(location.hash.slice(1),10)||1)-1);
+</script>
+</body>
+</html>

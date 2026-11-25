@@ -9,7 +9,9 @@
 | [docs/agent-components-concept.md](docs/agent-components-concept.md) | 개념 장의 두 줄 구성안(8칸, Persistence는 Memory에 합침), 검토와 비판적 검토, 역사 서술의 근거 확인 |
 | [docs/evaluation-elements.md](docs/evaluation-elements.md) | Evaluation에 넣을 평가 요소(Anthropic 평가 글, 구축 가이드, AI-Native SDLC Playbook)와 매트릭스에 더한 넷 |
 | [docs/agent-components-implementation.md](docs/agent-components-implementation.md) | 구현 장의 구성요소 14개, 하니스 6개의 보급, 한 턴의 순서, 개념 장과의 대응 |
-| [docs/hook-points.md](docs/hook-points.md) | 하니스 6개의 hook 지점(단계별), hook이 하는 일, hook과 middleware, hook을 감싸는 상자로 그리는 안 |
+| [docs/presentation-slides.md](docs/presentation-slides.md) | 발표 "AI Agent: 구성과 구현" HTML 슬라이드(58쪽): 보는 방법, 디자인과 기준, 구성과 목차, 구성안과 순서 비교, 구현 방식, 구성안에서 바꾼 것, 검토 의견, Verification과 hook 검토 |
+| [docs/presentation-fact-checks.md](docs/presentation-fact-checks.md) | 발표 슬라이드의 사실 확인 기록: ai-wiki 요청 11(15개 장), 15(Act-only 실패와 원문 그림), 16(Qwen3.5 템플릿), 17(RAG 검색 방식), analysis-docs의 MCP 스펙 확인 |
+| [docs/hook-points.md](docs/hook-points.md) | 하니스 6개의 hook 지점(단계별), hook이 하는 일, hook과 middleware, hook을 감싸는 상자로 그리는 안, 판정 모델을 붙이는 hook, 쓰임 조사 |
 | [docs/hosting.md](docs/hosting.md) | 정적 페이지를 주소로 공개하는 방법과 대안 |
 
 작업 기록은 [logs.md](logs.md)에 있습니다.

@@ -29,6 +29,10 @@ claude.ai에 있는 화이트보드들과, 그중 하나에서 만든 슬라이�
 - 한국어 위주이며 주요 용어는 영어로 씁니다. 공통 기반 층도 별도 섹션입니다.
 - 보드와 자동으로 연동되지 않습니다.
 
+## 발표 HTML 슬라이드
+
+2026-11-24에 사용자가 준 54쪽 구성안으로 `ai-agent-slides.html`을 만들었습니다. 디자인은 아래 시안 D, 작성 기준은 바로 아래 절을 따릅니다. 자세한 내용은 [presentation-slides.md](presentation-slides.md)에 있습니다.
+
 ## 발표 슬라이드 구성 보드의 작성 기준
 
 발표 슬라이드 구성 보드(https://claude.ai/artifact/4DMCbNKff4V72NVq7hM9CN)의 슬라이드 카드는 아래 기준으로 씁니다. 2026-11-18에 구성안 A~D와 확정안 전체를 이 기준으로 교정했습니다.
@@ -85,6 +89,7 @@ Claude Design 캔버스에 시안 다섯 가지를 만들었습니다: https://c
 
 ## 변경 이력
 
+- 2026-11-24: 발표 HTML 슬라이드(ai-agent-slides.html) 절을 더함
 - 2026-11-24: 매트릭스 보드의 hook을 단계 대신 모델 호출과 도구 호출을 감싸는 상자로 바꿈(→ hook-points.md)
 - 2026-11-24: 매트릭스 보드에서 Persistence를 Memory에 합침(개념 8칸, 아랫줄 세 칸, Memory 상자 확장)
 - 2026-11-24: 세션 저장을 transcript로, trace 블록을 telemetry(OTel)로 나누고 연결을 바꿈
