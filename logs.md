@@ -1,5 +1,6 @@
 # 작업 기록
 
+- 2026-11-25: ai-wiki 답을 받아 1부 개념 · 2부 기능 조사 정리, 위키에 없던 원문 5건 직접 확인 (→ docs/concept-function-component-research.md)
 - 2026-11-25: 새 발표(개념 · 기능 · 구성요소) 조사 시작, ai-wiki와 analysis-docs에 조사 요청 (→ docs/concept-function-component-research.md)
 - 2026-11-17: 다른 세션의 작업물(AI 에이전트 영향 그래프 5개 파일)을 저장소에서 제외하고 .gitignore에 추가 (→ index.md)
 - 2026-11-17: GitHub 비공개 저장소 ai-agent-study 생성, 기존 작업물 초기 커밋 (→ index.md)
