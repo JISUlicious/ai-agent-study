@@ -10,7 +10,7 @@
 | 부 | 요청한 곳 | 상태 |
 |---|---|---|
 | 1부 개념 · 2부 기능 | ai-wiki (2026-11-25 요청) | 답 받음. 위키에 없던 원문(Wooldridge & Jennings, OpenAI 가이드, Feng 2025, Xi 2023, CoALA)은 이 세션에서 직접 확인 |
-| 3부 구성요소 | analysis-docs (2026-11-25 요청) | 답 대기 |
+| 3부 구성요소 | analysis-docs (2026-11-25 요청) | 답 받음 (프레임워크 11개 대응표) |
 | 기존 자료 | agent-evo-graph의 "AI Agent: 구성과 구현" 덱(약 60쪽, 발전 순서) | 확인함. 재사용 후보는 아래 표 |
 
 근거 강도: 강 = 원문 확인, 중 = 2차 인용이나 요약, 해석 = 여러 출처를 묶은 이 문서의 판단.
@@ -93,20 +93,100 @@
 | 검증 · 복구 | Xu verification · recovery, Ning PEV, Weng self-reflection |
 | 협업 (다른 에이전트 · 사람) | Xu coordination, Zhou protocols, Feng 자율성 수준 |
 
-## 3부 구성요소 (작업 가설, analysis-docs 답 대기)
+## 3부 구성요소
 
-하니스 쪽 근거: [Meng 2026](https://www.preprints.org/manuscript/202604.0428)의 H=(E,T,C,S,L,V) = Execution loop, Tool registry, Context manager, State store, Lifecycle hooks, eValuation interface (중). [OpenAI 가이드](https://cdn.openai.com/business-guides-and-resources/a-practical-guide-to-building-agents.pdf)는 guardrails를 "layered defense"로 별도 장에서 다룸 (강).
+출처: analysis-docs 세션의 `agent-modules/에이전트_구현모듈_대응표.md`(2026-11-26 조사, 각 프레임워크 최신 릴리스 태그 코드 기준, 태그 고정 링크 약 500개). 이 문서는 아직 푸시 전이라 사용자의 Mac에만 있습니다. 아래 GitHub 링크는 analysis-docs가 확인한 것이고, 이 세션에서는 네트워크 제한으로 다시 열어 보지 못했습니다.
 
-| 묶음 | 모듈 |
+하니스 쪽 학술 근거: [Meng 2026](https://www.preprints.org/manuscript/202604.0428)의 H=(E,T,C,S,L,V) = Execution loop, Tool registry, Context manager, State store, Lifecycle hooks, eValuation interface (중). [OpenAI 가이드](https://cdn.openai.com/business-guides-and-resources/a-practical-guide-to-building-agents.pdf)는 guardrails를 "layered defense"로 별도 장에서 다룸 (강).
+
+### 대상
+
+CC = Claude Agent SDK v0.2.189 · OA = OpenAI Agents SDK v0.26.0 · LG = LangGraph 1.2.24 + LangChain v1 1.5.2 + deepagents 0.7.41 + langchain-mcp-adapters 0.3.2 · ADK = Google ADK v2.15.1 · PyAI = Pydantic AI v2.75.0 (+ pydantic-ai-harness) · smol = smolagents v1.26.0 · Codex = rust-v0.172.0 · OH = OpenHands software-agent-sdk v1.64.1 · oc = opencode v1.19.6 · Pi = pi v1.6.1 · mini = mini-swe-agent v2.4.6
+
+### 모듈 대응표
+
+○ 있음, △ 부분 · 한정, × 없음, ×e 코어에 없고 extension 예제, h = pydantic-ai-harness
+
+| 모듈 | CC | OA | LG | ADK | PyAI | smol | Codex | OH | oc | Pi | mini |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| M1 Model client | △¹ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |
+| M2 Loop · Runner | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |
+| M3 Session 저장 | ○ | ○ | ○² | ○ | ○ | △ | ○ | ○ | ○ | ○ | △ |
+| M4 Context 조립 | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |
+| M5 Compaction | ○ | ○ | ○ | ○ | ○ | △ | ○ | ○ | ○ | ○ | × |
+| M6 Tool 실행기 | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | △ (bash 1개) |
+| M7 MCP client | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ (번들 ext) | × |
+| M8 Skills | ○ | △³ | ○ | ○ | ○h | × | ○ | ○ | ○ | ○ | × |
+| M9 Memory (장기) | △ | △³ | ○ | ○ | ○h | × | ○ | △ | × | × | × |
+| M10 Planning | △ | × | ○ | △ | ○h | ○ | ○ | ○ | ○ | ×e | × |
+| M11 Sub-agent · Handoff | ○ | ○ | ○ | ○ | ○h | ○ | ○ | ○ | ○ | ×e | × |
+| M12 Hook · Middleware | ○ | ○ | ○ | ○ | ○ | △ | ○ | ○ | ○ | ○ | △ |
+| M13 Permission · Guardrail | ○ | ○ | ○ | △ | ○ | △ | ○ | ○ | ○ | ×e | △ (한도만) |
+| M14 Sandbox · 실행 환경 | △ | ○³ | ○ | ○ | △/○h | ○ (CodeAgent) | ○ | ○ (OS 격리 없음) | × | ×e | ○ |
+| M15 HITL | ○ | ○ | ○ | ○ | ○ | △ | ○ | ○ | ○ | △ | △ |
+| M16 Checkpoint · Resume | ○ | ○ | ○ | ○ | ○ | △ | ○ | ○ | ○ | △ | × |
+| M17 Tracing | ○ | ○ | △ (LangSmith) | ○ | ○ | △ | ○ | ○ | ○ | △ | △ |
+| M18 Evaluation | × | × | △ (LangSmith) | ○ | ○ | × | × | △ (critic) | × | △ (private) | △ |
+
+¹ 모델 호출은 CLI 안에 있고 SDK는 옵션만 넘김. ² 세션 전용 저장소 없이 checkpointer가 겸함. ³ SandboxAgent에서만. LG 열은 패키지 4개를 합친 값이며, LangGraph 코어만 보면 M4 · M7 · M8 · M10 · M13 · M14가 ×.
+
+### 읽는 법 (analysis-docs 보정 제안)
+
+- **빠진 모듈:** Loop guard · 예산(턴 · 비용 · 시간 한도, 재시도, fallback), Structured output · 종료 판정, 이벤트 스트림 · 전송 프로토콜, 도구 노출 관리(tool search, deferred loading), 모델 카탈로그 · 인증, Testing(가짜 모델).
+- **합치지 말 것:** Model client와 Loop. OA, ADK, Pi, mini, opencode 모두 둘을 나눔.
+- **위계:**
+  - M12 Hook · Middleware가 바닥 계층. 그 위에 compaction · todo · 권한 · HITL · skills가 플러그인으로 올라감(LangChain middleware, PyAI capability, Pi extension).
+  - M3 · M5 · M16은 저장 기반 하나를 공유(LG checkpointer, OH 이벤트 로그, oc 이벤트 테이블).
+  - M7 MCP는 M6 Tool의 어댑터. M11 Sub-agent도 M6 위에 있음. handoff(제어 이전)는 OA와 ADK에만.
+  - M13 권한과 M15 HITL은 같은 승인 채널.
+- **나눌 것:** M9 = 저장 · 검색 엔진 / 파일 주입 정책(CLAUDE.md 등). M13 = 정책 판정 / 판정자(사람 · LLM) / 내용 guardrail. M14 = OS 격리 / 실행 위치. M18 = 오프라인 평가 / 실행 중 critic(루프의 Verification).
+- **이름 충돌:** OA `agents.memory`는 대화 이력 Session. smol `AgentMemory`는 step 기록. ADK planners는 프롬프트 · thinking 설정.
+
+### 최소 대 프로덕션
+
+| | 들어 있는 모듈 |
 |---|---|
-| 모델 | Model client (프로바이더 어댑터, 스트리밍) |
-| 실행 | Agent loop / Runner |
-| 컨텍스트 | Prompt · context 조립, compaction |
-| 도구 | Tool registry · 실행기, MCP client, Skills 로더 |
-| 상태 | Session 저장, 장기 메모리 |
-| 통제 | Hook, Permission · Guardrail, Sandbox, HITL |
-| 조율 | Planning · Task, Sub-agent · Handoff |
-| 운영 | Tracing, Checkpoint · Resume, Evaluation |
+| 최소 ([mini-swe-agent DefaultAgent](https://github.com/SWE-agent/mini-swe-agent/blob/v2.4.6/src/minisweagent/agents/default.py), README "Just some 100 lines", 파일 190줄) | M1 `Model.query` · M2 `while True: step()` · M4 Jinja 템플릿 2개 · bash 도구 1개 + 형식 오류를 모델에 돌려주는 파서 · M14 `Environment.execute`(subprocess, 타임아웃) · 종료 신호와 step · cost · time 한도 · 메시지 목록 + trajectory JSON |
+| 중간 (Pi) | 코어에 M1~M8과 M12만. 나머지는 extension 예제이고, 전부 M12만으로 구현 |
+| 프로덕션에서 더해지는 것 | 영속 세션과 resume · fork, compaction, 다수 도구 · 병렬 · 출력 truncation, MCP, skills, hook · 권한 · 승인 채널, OS 격리(기본으로 켜진 곳은 Codex뿐), planning, sub-agent, tracing, 이벤트 · 서버 프로토콜, 모델 카탈로그 · 인증, 장기 메모리 |
+
+### 핵심 인터페이스
+
+| 모듈 | 인터페이스 | 예 |
+|---|---|---|
+| M1 Model client | `stream(model, messages, tools, settings)` → 이벤트 스트림 | ADK `BaseLlm.generate_content_async`, [OA models/interface.py](https://github.com/openai/openai-agents-python/blob/v0.26.0/src/agents/models/interface.py#L37) |
+| M2 Loop | `run(input)`: 모델 호출 → tool call 실행 반복 → 없으면 종료 | [Pi agentLoop](https://github.com/earendil-works/pi/blob/v1.6.1/packages/agent/src/agent-loop.ts#L47) |
+| M3 Session | append / load | OA `Session.get_items/add_items/pop_item`, ADK `BaseSessionService.append_event` |
+| M6 Tool | name + description + inputSchema + execute(args, ctx) | OA `FunctionTool`, [Codex ToolExecutor](https://github.com/openai/codex/blob/rust-v0.172.0/codex-rs/tools/src/tool_executor.rs), OH `ToolDefinition[Action, Observation]` |
+| M12 Hook | before / after / wrap × {run, model, tool} | [LangChain AgentMiddleware 6훅](https://github.com/langchain-ai/langchain/blob/langchain==1.5.2/libs/langchain_v1/langchain/agents/middleware/types.py) |
+| M13 Permission | `decide(tool, args)` → allow / ask / deny | CC `CanUseTool`, OH `SecurityAnalyzer` + `ConfirmationPolicy` |
+| M15 HITL | 멈춤 → 승인 목록 → approve / reject → 재개 | OA interruptions + `RunState.approve`, LG `interrupt()` / `Command(resume)` |
+| M16 Checkpoint | get / put | LG `BaseCheckpointSaver.get_tuple/put/put_writes` |
+| M18 Evaluation | dataset → evaluate | ADK `AgentEvaluator.evaluate`, pydantic-evals `Dataset.evaluate` |
+
+### 발표에서 조심할 점
+
+- "도구 오류는 모델에 돌려준다"로 일반화하면 틀림. OA 기본값은 예외를 숨기고 "An error occurred while running the tool."을 보냄. LangChain `create_agent`는 인자 오류만 돌려주고 실행 중 예외는 run을 멈춤. ADK는 `on_tool_error` 콜백이 없으면 raise.
+- deepagents 0.7.0부터 `write_todos`가 기본 도구에서 빠짐.
+- Codex에는 ToolHandler trait가 없고 `ToolExecutor<Invocation>`이 그 역할.
+- 확인 안 된 것: CC의 루프 · compaction · 재시도(공개되지 않은 CLI 안), LangSmith · Logfire 서버 쪽, smolagents mcpadapt의 sampling · elicitation.
+
+### 발표용 구성요소 묶음 제안 (해석)
+
+대응표와 보정 제안을 반영해, 최소 에이전트의 핵심에서 바깥으로 쌓는 순서로 묶습니다.
+
+| 층 | 묶음 | 모듈 | 최소 에이전트에 있나 |
+|---|---|---|---|
+| 핵심 | 모델 | Model client, 모델 카탈로그 · 인증 | ○ |
+| 핵심 | 실행 루프 | Runtime · 턴 처리, Loop guard · 예산, 종료 판정 | ○ |
+| 핵심 | 컨텍스트 | Context 조립, Compaction | 조립만 |
+| 핵심 | 도구 | Tool 레지스트리 · 실행기, 실행 환경 | bash 1개 |
+| 확장 | 도구 확장 | MCP client, Skills, 도구 노출 관리 | × |
+| 확장 | 상태 | Session · Checkpoint · Resume(저장 기반 공유), 장기 메모리 | 메시지 목록만 |
+| 확장 | 확장 지점 | Hook · Middleware (다른 확장이 올라가는 바닥) | × |
+| 확장 | 통제 | Permission · Guardrail, HITL(같은 승인 채널), Sandbox(OS 격리) | 한도만 |
+| 확장 | 조율 | Planning, Sub-agent · Handoff | × |
+| 운영 | 운영 | 이벤트 스트림 · 프로토콜, Tracing, Evaluation, Testing | trajectory JSON만 |
 
 ## 기존 덱에서 재사용 후보
 
@@ -122,3 +202,4 @@ agent-evo-graph 덱(claude.ai 아티팩트)은 발전 순서로 짜여 있어, �
 
 - 2026-11-25: 문서 작성. ai-wiki, analysis-docs에 조사 요청
 - 2026-11-25: ai-wiki 답과 원문 확인으로 1부 개념 · 2부 기능 채움
+- 2026-11-26: analysis-docs 답으로 3부 구성요소 채움
