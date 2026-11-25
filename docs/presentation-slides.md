@@ -1,13 +1,13 @@
 # 발표 슬라이드: AI Agent 구성과 구현
 
-사용자가 2026-11-24에 준 54쪽 구성안으로 만든 HTML 슬라이드의 기록입니다. 파일은 저장소 루트의 `ai-agent-slides.html`입니다. 구성안에 없던 질의 기반 RAG(11쪽), Tool call 반복 실패(17쪽), LLM 한계 극복 현황(25쪽), Hook 판정 구조(48쪽)를 더해 지금은 58쪽입니다.
+사용자가 2026-11-24에 준 54쪽 구성안으로 만든 HTML 슬라이드의 기록입니다. 파일은 저장소 루트의 `ai-agent-slides.html`입니다. 구성안에 없던 질의 기반 RAG(11쪽), Tool call 반복 실패(17쪽), LLM 한계 극복 현황(25쪽), Context window 초과(34쪽), Hook 판정 구조(49쪽)를 더해 지금은 59쪽입니다.
 
-쪽 번호 기준: 장을 자주 더하고 옮겨서, 이 문서는 구성 표, 목차 설명, 순서 비교 표만 지금(58쪽) 기준으로 고칩니다. 구현 방식, 구성안에서 바꾼 것, 검토 의견과 [presentation-fact-checks.md](presentation-fact-checks.md)의 쪽 번호는 적은 날의 기준입니다. 슬라이드 안의 목차와 쪽 참조는 자동으로 계산되어 늘 맞습니다.
+쪽 번호 기준: 장을 자주 더하고 옮겨서, 이 문서는 구성 표, 목차 설명, 순서 비교 표만 지금(59쪽) 기준으로 고칩니다. 구현 방식, 구성안에서 바꾼 것, 검토 의견과 [presentation-fact-checks.md](presentation-fact-checks.md)의 쪽 번호는 적은 날의 기준입니다. 슬라이드 안의 목차와 쪽 참조는 자동으로 계산되어 늘 맞습니다.
 
 ## 보는 방법
 
 - 브라우저로 파일을 엽니다. 미리보기 서버는 `.claude/launch.json`의 `agent-slides`(포트 8768)입니다.
-- 키보드: →, Space, PageDown은 다음, ←, PageUp은 이전, Home과 End, G는 목록. 화면 오른쪽 아래 버튼과 터치 밀기도 됩니다.
+- 키보드: →, Space, PageDown은 다음, ←, PageUp은 이전, Home과 End, G는 목록. 화면 오른쪽 아래 버튼으로도 넘깁니다. 터치 밀기로 넘기기는 확대한 채 화면을 움직여도 장이 넘어가서 2026-11-25 사용자 요청으로 뺐습니다.
 - 주소 끝의 `#번호`로 그 쪽을 바로 엽니다. 인쇄하면 한 쪽에 한 장씩 1280×720으로 나옵니다(PDF 저장용).
 
 ## 디자인과 작성 기준
@@ -28,20 +28,20 @@
 | 18–20 | ReAct: 루프, 이력 활용(17쪽과 같은 과제의 ReAct 궤적), 핵심 개념(Memory, Agent loop) |
 | 21–24 | Memory(내부, 외부), Agent Loop(구조, 작업 수행: 구조와 같은 루프 그림에 예시) |
 | 25–31 | Planning: LLM 한계 극복 현황, 오작동, Prompt chaining 재검토, CoT 프롬프트와 구조, 구현, Primitive AI Agent |
-| 32–38 | AI Agent 한계, Context Engineering(Transformer 한계, Lost in the middle, 개념, 원칙, 대상, 구현) |
-| 39–42 | Agent Skills(개념, 구성), Sub-agents(Multi-agent 구조, 목적) |
-| 43–46 | MCP(개념, 구성요소, 구조, 호출 과정) |
-| 47–54 | Hook: Controls · Verification(Hook 쓰임, 판정 구조, Controls 개념, Sandbox 필요성과 구현, 조기 종료, Goal loop 구현, Verifier 검증 루프) |
-| 55–56 | General-Purpose AI Agent: 구조(매트릭스 보드의 구현요소 흐름), 사례 |
-| 57–58 | Evaluation: 방법론(AI-Native SDLC Playbook), 확장 |
+| 32–39 | AI Agent 한계, Context Engineering(Transformer 한계, Context window 초과, Lost in the middle, 개념, 원칙, 대상, 구현) |
+| 40–43 | Agent Skills(개념, 구성), Sub-agents(Multi-agent 구조, 목적) |
+| 44–47 | MCP(개념, 구성요소, 구조, 호출 과정) |
+| 48–55 | Hook: Controls · Verification(Hook 쓰임, 판정 구조, Controls 개념, Sandbox 필요성과 구현, 조기 종료, Goal loop 구현, Verifier 검증 루프) |
+| 56–57 | General-Purpose AI Agent: 구조(매트릭스 보드의 구현요소 흐름), 사례 |
+| 58–59 | Evaluation: 방법론(AI-Native SDLC Playbook), 확장 |
 
-목차는 처음에 제목 "구성과 구현"에 맞춰 "구성"(3~28쪽)과 "구현"(29~55쪽) 두 부분으로 묶었습니다. 2026-11-25 사용자 의견(두 부분의 경계가 모호함)으로 묶음을 없애고, 섹션 제목 18개를 쪽 범위와 함께 두 단으로 나열합니다. 제목은 각 장 오른쪽 위의 섹션 이름을 따릅니다. 그래서 전에 한 줄로 합쳤던 Memory · Agent Loop와 AI Agent 한계 · Context Engineering을 나누고, Planning 범위에 들어 있던 Primitive AI Agent(31쪽)도 따로 적습니다. Hook 섹션은 Hook(47~48), Hook · Controls(49~51, Sandbox 포함), Hook · Verification(52~54) 세 줄입니다. 쪽 범위는 2026-11-25부터 장의 섹션 이름으로 계산하므로, 장을 더하거나 옮겨도 목차를 따로 고칠 필요가 없습니다(아래 "구현 방식"). 고려한 대안은 둘이었습니다. 하나는 이전 13줄을 묶음 제목만 빼고 그대로 두는 것인데, 합친 줄이 장의 섹션 이름과 어긋나 택하지 않았습니다. 다른 하나는 쪽 번호까지 빼는 것인데, 발표 중 목차에서 바로 이동할 때 쪽 범위가 쓸모 있어 남겼습니다.
+목차는 처음에 제목 "구성과 구현"에 맞춰 "구성"(3~28쪽)과 "구현"(29~55쪽) 두 부분으로 묶었습니다. 2026-11-25 사용자 의견(두 부분의 경계가 모호함)으로 묶음을 없애고, 섹션 제목 18개를 쪽 범위와 함께 두 단으로 나열합니다. 제목은 각 장 오른쪽 위의 섹션 이름을 따릅니다. 그래서 전에 한 줄로 합쳤던 Memory · Agent Loop와 AI Agent 한계 · Context Engineering을 나누고, Planning 범위에 들어 있던 Primitive AI Agent(31쪽)도 따로 적습니다. Hook 섹션은 Hook(48~49), Hook · Controls(50~52, Sandbox 포함), Hook · Verification(53~55) 세 줄입니다. 쪽 범위는 2026-11-25부터 장의 섹션 이름으로 계산하므로, 장을 더하거나 옮겨도 목차를 따로 고칠 필요가 없습니다(아래 "구현 방식"). 고려한 대안은 둘이었습니다. 하나는 이전 13줄을 묶음 제목만 빼고 그대로 두는 것인데, 합친 줄이 장의 섹션 이름과 어긋나 택하지 않았습니다. 다른 하나는 쪽 번호까지 빼는 것인데, 발표 중 목차에서 바로 이동할 때 쪽 범위가 쓸모 있어 남겼습니다.
 
 2026-11-24 사용자 승인으로 Sub-agents를 Agent Skills 뒤(38~39쪽)로 옮겼습니다. Context window 한계에 대응하는 장(Context Engineering, Skills, Sub-agents)이 이어지게 하려는 것입니다. MCP부터 Goal Loop까지는 두 쪽씩 밀렸고, 29쪽의 대응 쪽 번호와 목차도 고쳤습니다. 아래 "구성안에서 바꾼 것"과 [presentation-fact-checks.md](presentation-fact-checks.md)의 "사실 확인 결과" 표의 쪽 번호는 옮기기 전 기준입니다.
 
 ### 구성안과 순서 비교 (2026-11-25 확인)
 
-처음 구성안(54쪽)과 지금 슬라이드(58쪽)를 한 쪽씩 맞댄 결과입니다. 구성안에 없던 장을 넷 더했고(11쪽 질의 기반 RAG, 17쪽 Tool call 반복 실패, 25쪽 LLM 한계 극복 현황, 48쪽 Hook 판정 구조), 자리를 옮긴 곳이 둘(Sub-agents 앞당김, Hook 쓰임을 Controls 앞으로)입니다. 나머지는 순서 그대로 쪽 번호만 밀렸습니다.
+처음 구성안(54쪽)과 지금 슬라이드(59쪽)를 한 쪽씩 맞댄 결과입니다. 구성안에 없던 장을 다섯 더했고(11쪽 질의 기반 RAG, 17쪽 Tool call 반복 실패, 25쪽 LLM 한계 극복 현황, 34쪽 Context window 초과, 49쪽 Hook 판정 구조), 자리를 옮긴 곳이 둘(Sub-agents 앞당김, Hook 쓰임을 Controls 앞으로)입니다. 나머지는 순서 그대로 쪽 번호만 밀렸습니다.
 
 | 구성안 | 지금 | 내용 | 바뀐 점 |
 |---|---|---|---|
@@ -51,19 +51,21 @@
 | 없음 | 17 | Tool call 반복 실패 | 새 장(2026-11-25 사용자 요청, ReAct로 가는 근거) |
 | 16–22 | 18–24 | ReAct부터 Agent Loop까지 | 순서 그대로, 두 쪽 밀림 |
 | 없음 | 25 | LLM 한계 극복 현황 | 새 장(2026-11-25 사용자 요청, 복잡한 작업 오작동으로 잇는 다리) |
-| 23–37 | 26–40 | Planning부터 Agent Skills까지 | 순서 그대로, 세 쪽 밀림 |
-| 49–50 | 41–42 | Sub-agents | Agent Skills 뒤로 앞당김(2026-11-24 사용자 승인) |
-| 38–41 | 43–46 | MCP | 순서 그대로, 다섯 쪽 밀림 |
-| 43 | 47 | Hook 사용 예시 → Hook 쓰임 | Controls 앞, Hook 섹션 맨 앞으로 옮김(2026-11-25 Claude 판단, 따로 승인받지 않음) |
-| 없음 | 48 | Hook 판정 구조 | 새 장(2026-11-24, 넓은 뜻의 hook으로 묶는 사용자 결정과 함께 더함) |
-| 42 | 49 | Controls | Hook 두 장 뒤로 감 |
-| 44–45 | 50–51 | Sandbox | 순서 그대로 |
-| 46–48 | 52–54 | Goal Loop | 순서 그대로, 섹션 이름이 Hook · Verification으로 바뀜 |
-| 51–54 | 55–58 | General-Purpose AI Agent, Evaluation | 순서 그대로, 새 장 넷 때문에 네 쪽 밀림 |
+| 23–30 | 26–33 | Planning부터 Transformer 구조 한계까지 | 순서 그대로, 세 쪽 밀림 |
+| 없음 | 34 | Context window 초과 | 새 장(2026-11-25 사용자 요청, 대화 이력과 문서가 쌓여 창을 넘고 thinking과 출력도 창을 씀) |
+| 31–37 | 35–41 | Lost in the middle부터 Agent Skills까지 | 순서 그대로, 네 쪽 밀림 |
+| 49–50 | 42–43 | Sub-agents | Agent Skills 뒤로 앞당김(2026-11-24 사용자 승인) |
+| 38–41 | 44–47 | MCP | 순서 그대로, 여섯 쪽 밀림 |
+| 43 | 48 | Hook 사용 예시 → Hook 쓰임 | Controls 앞, Hook 섹션 맨 앞으로 옮김(2026-11-25 Claude 판단, 따로 승인받지 않음) |
+| 없음 | 49 | Hook 판정 구조 | 새 장(2026-11-24, 넓은 뜻의 hook으로 묶는 사용자 결정과 함께 더함) |
+| 42 | 50 | Controls | Hook 두 장 뒤로 감 |
+| 44–45 | 51–52 | Sandbox | 순서 그대로 |
+| 46–48 | 53–55 | Goal Loop | 순서 그대로, 섹션 이름이 Hook · Verification으로 바뀜 |
+| 51–54 | 56–59 | General-Purpose AI Agent, Evaluation | 순서 그대로, 새 장 다섯 때문에 다섯 쪽 밀림 |
 
-- 구성안의 Controls(42), Hook(43), Sandbox(44~45), Goal Loop(46~48) 네 섹션은 2026-11-24 사용자 결정으로 "Hook: Controls · Verification" 한 섹션(지금 47~54쪽)이 됐습니다.
-- Hook 쓰임을 옮긴 경위: 2026-11-25에 제안한 두 안은 "46쪽(당시 쪽 번호)을 그 자리에서 쓰임별로 바꾸기"와 "그 장은 두고 섹션 앞에 Hook 쓰임 장 추가"였고, 사용자 답은 "넓혀서 작성"이었습니다. 첫 안대로 넓히면서 자리는 섹션 맨 앞으로 옮겼습니다. 쓰임 전체에서 판정(48쪽 표)으로 좁혀 가는 순서가 낫다고 본 판단이고, 이동은 따로 승인받지 않았습니다.
-- 구성안 43쪽의 "HITL hook 포함"은 지금 47쪽(Hook 쓰임)에 없고 48쪽 표의 "PermissionRequest 승인 (HITL)" 칸에만 있습니다. 넓히기 전 "Hook 사용 예"는 PermissionRequest(사람의 승인, HITL)를 강조 카드로 두었는데, 쓰임 여덟 가지로 바꾸면서 빠졌습니다.
+- 구성안의 Controls(42), Hook(43), Sandbox(44~45), Goal Loop(46~48) 네 섹션은 2026-11-24 사용자 결정으로 "Hook: Controls · Verification" 한 섹션(지금 48~55쪽)이 됐습니다.
+- Hook 쓰임을 옮긴 경위: 2026-11-25에 제안한 두 안은 "46쪽(당시 쪽 번호)을 그 자리에서 쓰임별로 바꾸기"와 "그 장은 두고 섹션 앞에 Hook 쓰임 장 추가"였고, 사용자 답은 "넓혀서 작성"이었습니다. 첫 안대로 넓히면서 자리는 섹션 맨 앞으로 옮겼습니다. 쓰임 전체에서 판정(49쪽 표)으로 좁혀 가는 순서가 낫다고 본 판단이고, 이동은 따로 승인받지 않았습니다.
+- 구성안 43쪽의 "HITL hook 포함"은 지금 48쪽(Hook 쓰임)에 없고 49쪽 표의 "PermissionRequest 승인 (HITL)" 칸에만 있습니다. 넓히기 전 "Hook 사용 예"는 PermissionRequest(사람의 승인, HITL)를 강조 카드로 두었는데, 쓰임 여덟 가지로 바꾸면서 빠졌습니다.
 
 ## 구현 방식
 
@@ -97,7 +99,10 @@
 | 22 | 작업을 수행하는 에이전트의 탄생 | 21쪽과 같은 루프에 예시: 사용자 입력 "README에 설치 방법 추가해줘", ① read_file 요청 ② README.md 읽기 ③ 파일 내용 ④ edit_file 요청 ⑤ 설치 방법 절 추가 ⑥ 수정 완료 ⑦ 도구 호출 없이 답 | 2026-11-25 사용자 요청. 처음에는 사용자 입력 → Agent loop → 작업 결과 흐름이었음. 번호는 처음에 LLM 호출 차례(①, ②, ③)로 매겨 한 번호가 노드 세 곳에 나왔으나, 같은 날 사용자 요청으로 단계마다 ①~⑦을 하나씩 매김. 루프가 여러 번 도는 것을 보이려고 도구를 두 번 쓰는 작업을 골랐고, 도구를 한 번 쓰는 날씨 예시는 14쪽 Tool call 실행과 겹쳐 쓰지 않음 |
 | 15와 16 사이 | 없음 | 새 16쪽 Tool call 반복 실패: ReAct 논문 Figure 1의 ALFWorld Act-only 궤적. 없는 물건을 집는 같은 행동이 두 번 "Nothing happens."로 실패. 옆에 Act-only 뜻, 같은 호출 반복, ALFWorld 성공률 | 2026-11-25 사용자 요청: ReAct 바로 앞에 도구 호출이 계속 실패하는 사례를 두고 ReAct로 가는 근거로 씀. 논문이 ReAct의 비교 대상(Act-only)으로 직접 보인 실패라 근거로 바로 이어짐. HotpotQA 예(검색 실패 뒤 틀린 답)보다 "같은 호출 반복"이 뚜렷해 ALFWorld 예를 고름. ai-wiki 요청 15로 흐름, 수치, 실패 이유를 확인(강)하고, 위키로 못 본 번호와 과제 문장 구두점은 사용자 승인으로 원문 그림(ar5iv)에서 확인해 "확인 중"을 지움 |
 | 25 | Planning: CoT 프롬프트 예시 | Kojima 2022 Figure 1의 저글러 문제로 CoT 미적용과 적용을 비교: 같은 질문에 "A: The answer (arabic numerals) is" → 8 ✗, "A: Let's think step by step." → 풀이 뒤 4 ✓. 아래 줄에 수학 밖 과제의 Zero-shot → Zero-shot-CoT 정확도(Last Letter 0.2% → 57.6%, Coin Flip 12.8% → 91.4%, Date 49.3% → 67.5%) | 2026-11-25 사용자 요청(지금 28쪽). 처음 예시(책 15권 문제)는 지어낸 것이었음. ai-wiki 요청 19~21로 후보를 찾아 한때 Last Letter의 성공(ynln ✓)과 실패(tkaea ✗)를 실었으나, 둘 다 CoT를 적용한 출력이라 CoT 적용 · 미적용 비교가 안 된다는 사용자 지적으로 바꿈. 수학 밖 과제에서 미적용 출력과 적용 출력을 원문으로 나란히 보인 예시는 두 논문에 없어서, 출력 비교는 원문 그림이 있는 저글러 문제(수학)로 하고, 수학 밖 과제는 정확도 수치로 보탬. Last Letter 성공 · 실패 예시는 presentation-fact-checks.md 요청 21에 남김. 입력 하나에 출력 여럿과 아래 알약 줄을 그리는 codefan을 씀 |
+| 27 | Planning: Plan mode, Tasks 등 예시 | (지금 30쪽) 오른쪽 셋을 묶음 상자로: "실행 전: Plan mode" → "실행 중: Tasks" → "실행 중: 계획 갱신", 계획 갱신에서 Tasks로 되돌아가는 "반복" 화살표 | 2026-11-25 사용자 질문("오른쪽 노드도 순서대로 실행되는 항목처럼 보인다")에 답하고 다시 그림. Plan mode만 실행 전에 한 번이고, Tasks와 계획 갱신은 실행 중에 함께 되풀이되는 관계라 가운데에서 세 칸으로 따로 나가던 화살표가 관계를 잘못 보였음. hub에 묶음 상자 안 반복 화살표(rloop, 그린 뒤 위치를 재는 drawLoops)를 더함 |
+| 28 | Primitive AI Agent: LLM + Tool Use + Memory + Agent Loop + Planning | (지금 31쪽) Planning과 그 앞의 +를 흐리게(점선 테두리) 두고, 설명은 "LLM, Tool Use, Memory, Agent Loop가 기본"(Planning은 말로 언급하지 않음, 사용자 요청) | 2026-11-25 사용자 의견: Planning은 꼭 필요한 구성요소가 아님. 3쪽에서 Planning을 L2(확장 구성)에 둔 것과도 맞음. equation에 흐리게 표시(dim)를 더함 |
 | 30 | transformer 모델의 구조적인 한계(어느 부분인지 명시) | 두 한계로 정리: "Attention budget → 품질 저하"(Self-attention, 토큰이 늘수록 주의가 n²쌍에 얇게 퍼져 필요한 정보를 놓치고 중간 위치에서 특히 심함, 다음 장 Lost in the middle)와 "학습 길이 → Context window 상한"(Positional encoding(RoPE), 학습한 길이를 넘는 위치에서 attention이 무너지고 RoPE 조정 · YaRN과 추가 학습으로 늘림, 예 256K → 1M). KV cache와 prefill은 아래 "사용 단계 비용" 한 줄 | 2026-11-25 사용자 의견(지금 33쪽). 처음에는 O(n²), 학습 길이를 넘는 위치, KV cache, attention budget 네 칸이었음. ai-wiki 요청 18 조사와 이어진 질문에서 "창의 상한은 학습한 길이와 위치 표현이 정하고, KV cache와 prefill은 사용 단계 비용"으로 정리한 것에 맞춤. 학습 하드웨어는 큰 회사에 걸림돌이 아니라는 사용자 판단을 따름. 단 긴 문서 데이터가 드문 문제는 "학습 길이" 안에 들어감 |
+| 30과 31 사이 | 없음 | 새 34쪽 Context window 초과(막대 개념도): 1턴 · 10턴 · 30턴마다 System prompt · Tools, 문서, 대화 이력 · Tool 결과, Thinking, Output이 쌓이고, 30턴에서 입력이 한도 근처까지 차 있는 상태에서 Thinking과 Output이 한도를 넘음(넘는 부분은 포인트 색). 아래 줄에 "입력 + Thinking + Output ≤ Context window" | 2026-11-25 사용자 요청: 대화 이력과 문서가 쌓여 창을 넘는 모습과, thinking budget과 출력도 창의 토큰을 쓴다는 점. 비율은 예시라 "개념도"로 표시. 막대를 그리는 ctxbars를 더함. ai-wiki 요청 22로 확인한 뒤 "확인 중"을 지우고 근거 알약 셋(Thinking은 max_tokens에 포함, 도구 정의만 약 55K, 넘으면 compaction 또는 "Prompt is too long")을 더함. 이어서 사용자 요청으로 맨 위에 토큰 생성 되짚기 띠를 넣음: 4쪽 예시(대한민국 의 수도 는 + 앞서 생성한 "서울")가 LLM에 들어가 "입니다"를 만들고, 점선 화살표로 그 토큰이 입력 끝에 다시 붙는 모습. 출력 토큰도 다음 입력이 되어 창을 차지한다는 근거를 그림으로 보이고, 같은 말을 하던 식("입력 + Thinking + Output ≤ Context window")은 자리가 모자라 뺌. 되돌림 화살표는 그린 뒤 위치를 재서 그림(drawGenBack). 그 뒤 사용자 요청으로 아래 근거 알약 셋을 빼고 막대를 다시 키움. 근거는 presentation-fact-checks.md 요청 22에 남기고, 출처 칸에는 설명 문장의 thinking 근거(Osmani 2026)만 둠 |
 | 32 | Anthropic Context Engineering 도표 | 오른쪽 후보에 Agent Skills를 더해 System instructions, Tools, MCP, Agent Skills, 외부 데이터, Message history 여섯 칸 | 2026-11-25 사용자 요청(지금 35쪽). Agent Skills도 필요할 때 context에 들어오는 정보라 선별 대상에 넣음. 원 글(2025-09)의 목록에는 없어 출처 칸에 "Agent Skills는 발표자가 더함"을 적음. 여섯 칸이 들어가도록 칸 높이를 44px에서 40px로 줄임 |
 | 37 | SKILLS.md | SKILL.md | 실제 파일 이름 |
 | 39, 50 | 컨택스트 | 컨텍스트, context | 표기 통일 |
@@ -180,6 +185,14 @@
 
 ## 변경 이력
 
+- 2026-11-25: 사용자 요청으로 31쪽 설명을 "LLM, Tool Use, Memory, Agent Loop가 기본"으로 줄임(Planning 언급 뺌)
+- 2026-11-25: 사용자 의견으로 31쪽 Primitive AI Agent에서 Planning을 흐리게 표시하고 설명을 고침
+- 2026-11-25: 사용자 질문으로 30쪽 Planning 구현을 "실행 전 Plan mode → 실행 중 Tasks ↔ 계획 갱신(반복)" 묶음 상자로 다시 그림
+- 2026-11-25: 사용자 요청으로 터치 좌우 밀기로 넘기는 동작을 뺌(확대 중에도 넘어가는 문제)
+- 2026-11-25: 사용자 요청으로 34쪽 아래 근거 알약 셋을 빼고 막대 크기를 되돌림
+- 2026-11-25: 사용자 요청으로 34쪽 맨 위에 토큰 생성 되짚기 띠(4쪽 예시, 생성한 토큰이 입력 끝에 다시 붙는 점선 화살표)를 넣고, 막대를 줄여 자리를 만듦
+- 2026-11-25: ai-wiki 요청 22 답으로 34쪽의 "확인 중"을 지우고 근거 알약 셋과 출처를 더함
+- 2026-11-25: 사용자 요청으로 33쪽 뒤(34쪽)에 Context window 초과 개념도를 더해 59쪽이 됨(ai-wiki 요청 22로 확인 중)
 - 2026-11-25: 사용자 지적(둘 다 CoT 적용 사례)으로 28쪽을 CoT 적용 · 미적용 비교로 바꿈. 출력 비교는 Kojima Figure 1 저글러 문제(8 ✗ → 4 ✓), 수학 밖 과제는 정확도 알약 셋
 - 2026-11-25: 사용자 요청으로 28쪽 CoT 프롬프트를 지어낸 수학 예시에서 Kojima 2022의 Last Letter 원문 예시(성공 ynln ✓, 실패 tkaea ✗)와 정확도 0.2% → 57.6%로 바꿈
 - 2026-11-25: 사용자 의견으로 33쪽 Transformer 구조 한계를 두 한계(Attention budget → 품질 저하, 학습 길이 → Context window 상한)와 "사용 단계 비용" 한 줄로 다시 씀

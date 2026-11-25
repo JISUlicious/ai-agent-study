@@ -1,5 +1,13 @@
 # 작업 기록
 
+- 2026-11-25: 사용자 요청으로 발표 슬라이드 31쪽 설명 문장을 "LLM, Tool Use, Memory, Agent Loop가 기본"으로 줄임. Planning은 그림에서 흐리게만 두고 문장에서는 언급하지 않음 (→ docs/presentation-slides.md)
+- 2026-11-25: 사용자 의견으로 발표 슬라이드 31쪽(Primitive AI Agent)의 Planning을 흐리게(점선) 처리하고 설명을 "LLM, Tool Use, Memory, Agent Loop가 기본, Planning은 꼭 필요하지는 않은 요소"로 바꿈. 3쪽의 L2(확장 구성)와 맞음 (→ docs/presentation-slides.md)
+- 2026-11-25: 사용자 질문으로 발표 슬라이드 30쪽(Planning 구현)을 다시 그림. 오른쪽 셋이 순서대로 실행되는 것처럼 보였으나 Plan mode만 실행 전이고 Tasks와 계획 갱신은 실행 중 반복이라, 묶음 상자 안에 "실행 전 → 실행 중"과 반복 화살표로 보임 (→ docs/presentation-slides.md)
+- 2026-11-25: 사용자 요청으로 발표 슬라이드의 터치 좌우 밀기 넘기기를 뺌. 확대한 채 화면을 움직여도 장이 넘어가 불편했음. 버튼, 키보드, 목록(G), 주소 #번호로 넘김. 밀기 흉내 이벤트로 장이 바뀌지 않고 버튼과 → 키는 그대로 됨을 확인 (→ docs/presentation-slides.md)
+- 2026-11-25: 사용자 요청으로 발표 슬라이드 34쪽 아래 근거 알약 셋(Thinking 출력 예산, 도구 정의 55K, compaction)을 빼고 막대를 다시 키움. 근거는 사실 확인 기록에 남김 (→ docs/presentation-slides.md)
+- 2026-11-25: 사용자 요청으로 발표 슬라이드 34쪽(Context window 초과) 맨 위에 토큰 생성 되짚기 띠를 넣음. 4쪽 예시 "대한민국 의 수도 는 서울"이 LLM에 들어가 "입니다"를 만들고, 그 토큰이 점선 화살표로 입력 끝에 다시 붙음. 출력 토큰도 다음 입력이 되어 창을 차지함을 보임 (→ docs/presentation-slides.md)
+- 2026-11-25: ai-wiki 요청 22 답 반영. 34쪽 Context window 초과에 근거 알약 셋을 더함: Thinking은 max_tokens에 포함되고 출력은 다음 턴의 대화 이력, MCP 도구 정의만 약 55K 토큰, Claude Code는 한도 근처에서 자동 compaction(끄면 "Prompt is too long"). "입력 + 출력 ≤ 창" API 원문은 위키에 없어 개념식으로 둠 (→ docs/presentation-fact-checks.md)
+- 2026-11-25: 사용자 요청으로 발표 슬라이드 33쪽 뒤(34쪽)에 "Context window 초과" 개념도를 더함(59쪽). 1턴 · 10턴 · 30턴 막대에 System prompt · Tools, 문서, 대화 이력, Thinking, Output이 쌓이고 30턴에서 Thinking과 Output이 한도를 넘음. "입력 + Thinking + Output ≤ Context window". 사실관계는 ai-wiki 요청 22로 확인 중 (→ docs/presentation-slides.md, docs/presentation-fact-checks.md)
 - 2026-11-25: 사용자 지적(성공 · 실패 예시가 둘 다 CoT 적용)으로 28쪽을 CoT 적용 · 미적용 비교로 다시 씀. Kojima Figure 1 저글러 문제로 같은 질문에 Zero-shot "8 ✗"와 Zero-shot-CoT "4 ✓"를 나란히 두고, 수학 밖 과제의 정확도(Last Letter 0.2 → 57.6, Coin Flip 12.8 → 91.4, Date 49.3 → 67.5)를 아래 알약으로 보탬. 수학 밖 과제는 미적용 출력 원문이 없어 수치로만 보임 (→ docs/presentation-slides.md)
 - 2026-11-25: 사용자 요청으로 발표 슬라이드 28쪽(CoT 프롬프트)을 Kojima 2022 Last Letter 원문 예시로 바꿈. "Let's think step by step." 입력 하나에 성공("ynln" ✓)과 실패("tkaea" ✗, 정답 tkea) 출력 둘, 설명에 정확도 0.2% → 57.6%. 지어낸 책 15권 예시는 뺌 (→ docs/presentation-slides.md)
 - 2026-11-25: ai-wiki 요청 21 답 기록. Last Letter 실패 예시가 원문에 있음: Kojima Table 12 "Lamont Frederick Lance Esperanza" → 끝 글자는 맞게 찾고 "tkaea"로 이어 붙여 오답(정답 tkea, "ynln" ✓ 바로 아래), Wei 부록 Table 13 "Daniel Friedman" → 끝 글자를 잘못 찾아 "lm" 오답. 직접 답의 오답 출력은 없음. 단어 수가 늘면 CoT도 무너짐(PaLM 540B 2단어 99.4 → 4단어 63.0) (→ docs/presentation-fact-checks.md)

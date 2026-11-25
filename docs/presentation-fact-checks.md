@@ -204,6 +204,21 @@ ai-wiki의 슬라이드 제안(해석): 33쪽에 "창 크기는 어떻게 정해
 - 단어 수가 늘면 무너짐(Wei Table 5, 예시는 2단어 이름만 보여 주고 3 · 4단어로 평가): PaLM 540B 표준 → CoT 2단어 7.6 → 99.4, 3단어 0.2 → 94.8, 4단어 0.0 → 63.0. LaMDA 137B 2단어 5.8 → 77.5, 4단어 0.0 → 13.5. PaLM 8B 2단어 2.6 → 18.8. 원문은 풀이 구조가 예시에 그대로 있는 "toy tasks"인데도 "small models still fail"
 - Kojima의 Last Letter Few-shot · Few-shot-CoT 수치는 위키에 없음(Few-shot 비교 표는 수학 과제만). Wei의 Few-shot-CoT 예시는 2단어 이름 넷("Elon Musk" → nk 등)
 
+### ai-wiki 요청 22 (2026-11-25): Context window를 채우는 것과 thinking · 출력
+
+사용자 요청으로 33쪽 뒤(34쪽)에 대화 이력과 문서가 쌓여 context window를 넘는 막대 개념도를 넣고, thinking budget과 출력도 같은 창의 토큰을 쓴다는 점을 적었습니다. 초안 문구는 "입력(System prompt · Tools + 문서 + 대화 이력) + Thinking + Output ≤ Context window"입니다. 물은 것: 창에 들어가는 것의 목록과 원문 표현, 출력 토큰과 max_tokens의 관계, Claude thinking budget이 max_tokens 안에 들어가는지와 이전 턴 thinking 블록이 빠지는지(도구 사용 중 예외 포함), 다른 모델의 reasoning tokens, 창을 넘을 때 실제 동작(오류, 잘라내기, 자동 compaction)과 하니스 예, 긴 대화에서 무엇이 창을 가장 많이 차지하는지의 수치.
+
+답(따로 적은 곳 말고는 강):
+
+- 창에 들어가는 것: Claude Code 문서 "Claude Code's context window holds everything Claude knows about your session: your instructions, the files it reads, its own responses, and content that never appears in your terminal." 예시 세션 표에서 시작 전 시스템 프롬프트 4,200, 자동 메모리 680, 환경 정보 280, MCP 도구 이름 120, skill 설명 450, CLAUDE.md 둘 2,120 토큰. 작업 중 파일 읽기, 검색 결과, hook 출력, 테스트 출력, 자기 분석이 쌓이고 sub-agent는 따로 된 창에서 요약만 돌아옴. 합계는 compaction 전 22,225, 후 17,095 토큰
+- 도구 정의만으로도 큼(Anthropic advanced tool use, 2025): MCP 서버 5개 도구 58개가 "approximately 55K tokens before the conversation even starts", 내부 사례 134K. Tool Search Tool로 85% 감소
+- 출력: "입력 + 출력 ≤ 창"을 한 문장으로 말한 API 문서 원문은 위키에 없음. 창에 자기 응답이 들어간다(Claude Code 문서), Sonnet 5.5는 창 1M에 출력 최대 128K(Osmani 2026), 매 턴 전체 context를 다시 보낸다(Osmani)
+- thinking: "Thinking counts toward `max_tokens`, so leave room."(Osmani 2026). 도구 사용 중에는 thinking 블록을 "pass these blocks back unchanged". 돌려주지 않는 thinking도 출력 토큰으로 과금. budget_tokens는 최근 모델에서 effort로 바뀜(중). 이전 턴 thinking이 다음 턴 context에서 빠지는지는 Claude에 대해 위키에 없음. MiniMax M2는 이전 추론을 남기고, 다른 방식은 빼는 등 모델마다 다름
+- 넘으면: Claude Code는 한도 근처에서 자동 compaction(1M 창 모델은 약 967K), 끄면 200K 경계에서 "Prompt is too long" 오류. 하니스별 compaction 기준은 Codex 창의 90%, Goose 80%, Cline 90%에서 70%로, Hermes 50~85%, Pi와 OpenClaw는 창 − 16,384 등. 단순히 잘라내는 방식은 위키에 없음
+- 무엇이 많이 차지하나: SkillGym(Ge 2026) 저장된 궤적 텍스트 기준 추론 35.9%, 도구 출력 34.0%, 도구 호출 19.6%(창 점유율과 같지는 않음). 도구 출력 중 나중에 실제로 쓰이는 것은 27%, 36%는 한 번도 안 쓰임(Park 2026)
+
+슬라이드 반영: "확인 중"을 지우고 아래 알약 셋(Thinking은 max_tokens에 포함하고 출력은 다음 턴의 대화 이력, 도구 정의만 약 55K, 넘으면 compaction 또는 "Prompt is too long")을 더함. "입력 + Thinking + Output ≤ Context window" 식은 출력이 입력에 이어 같은 순서열로 생성된다는 4 · 6쪽 설명에서 나오는 개념식으로 두고, 막대는 개념도로 표시.
+
 ## MCP 스펙 확인 결과 (analysis-docs, 2026-11-24)
 
 근거: MCP 스펙 저장소(modelcontextprotocol/modelcontextprotocol, main b0be8f0, 2026-11-23)의 2025-11-25판과 2026-07-28판, agentskills.io specification. 쪽 번호는 지금 기준입니다.
@@ -220,6 +235,8 @@ ai-wiki의 슬라이드 제안(해석): 33쪽에 "창 크기는 어떻게 정해
 
 ## 변경 이력
 
+- 2026-11-25: ai-wiki 요청 22 답을 적고 34쪽 반영 내용을 기록
+- 2026-11-25: ai-wiki 요청 22(34쪽 Context window 초과) 절을 더함. 답을 기다리는 중
 - 2026-11-25: 요청 18의 33쪽 반영 내용을 적음
 - 2026-11-25: ai-wiki 요청 18 답 2/2(실제 쓸 수 있는 길이, 구조 대안과 대가, 모델별 창 수치, 슬라이드 제안)를 적어 요청 18 기록을 마침
 - 2026-11-25: ai-wiki 요청 18 답 1/2(위치 표현, 연산과 메모리, 학습)를 적음. 2/2(실제 쓸 수 있는 길이, 구조 대안, 모델별 수치)를 기다리는 중

@@ -174,6 +174,8 @@ body{word-break:keep-all;overflow-wrap:break-word}
 .eqrow .op{font-size:34px;font-weight:500;color:var(--muted)}
 .eqrow .big{height:96px;border-radius:48px;padding:0 44px}
 .eqrow .big .t{font-size:34px}
+.eqrow .dim{opacity:.38}
+.eqrow .pill.dim{border-style:dashed}
 
 /* 캔버스 다이어그램 */
 .cv{position:relative;width:1120px;flex:none}
@@ -222,6 +224,38 @@ body{word-break:keep-all;overflow-wrap:break-word}
 .agrid i{width:18px;height:18px;border:1.5px solid var(--muted);border-radius:3px}
 .agrid i.f{background:var(--ink);border-color:var(--ink)}
 .gcap{font-size:15px;color:var(--muted);margin-top:10px;text-align:center}
+
+/* Context window 막대 */
+.cwin{display:flex;flex-direction:column;align-items:center;gap:20px;width:100%}
+.clg{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;font-size:15px;color:var(--muted)}
+.clg span{display:flex;align-items:center;gap:8px}
+.clg .cs{position:static;display:inline-block;width:24px;height:14px}
+.crows{position:relative;display:flex;flex-direction:column;gap:18px;padding-top:32px}
+.crow{display:flex;align-items:center;gap:16px}
+.clab{width:60px;flex:none;font-size:18px;font-weight:700;text-align:right}
+.cbar{position:relative;height:44px;flex:none}
+.cs{position:absolute;top:0;height:100%}
+.cs.sys{background:#55554F}
+.cs.doc{background:#A8A8A2}
+.cs.hist{background:#D2D2CC}
+.cs.think{background:repeating-linear-gradient(45deg,#D2D2CC 0 6px,#EDEDEA 6px 12px);box-shadow:inset 0 0 0 1.5px #A8A8A2}
+.cs.out{background:#FFFFFF;box-shadow:inset 0 0 0 2px var(--line)}
+.cs.over{background:var(--accent)}
+.cover{position:absolute;top:50%;transform:translateY(-50%);font-size:17px;font-weight:700;color:#B8380A;white-space:nowrap}
+.climit{position:absolute;top:0;bottom:-10px;left:calc(76px + var(--lx));border-left:2px dashed var(--line)}
+.climit span{position:absolute;top:2px;left:10px;font-size:15px;font-weight:500;white-space:nowrap}
+.ceq{font-size:19px;color:var(--body)}
+.cgen{position:relative;display:flex;flex-direction:column;align-items:center}
+.grow{display:flex;align-items:center}
+.gseq{display:flex;gap:6px}
+.gseq span,.gnext{border:2px solid #D2D2CC;background:#D2D2CC;border-radius:10px;padding:5px 9px;font-size:18px;white-space:pre}
+.gseq span.o{background:#FFFFFF;border-color:var(--line)}
+.gnext{background:var(--accent);border-color:var(--accent);font-weight:700}
+.gllm{height:48px;padding:0 20px}
+.gback{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+.gloop{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+.gcap{margin-top:26px;font-size:15px;color:var(--muted)}
+.ceq .k{color:#B8380A;font-weight:700}
 
 /* 곡선 */
 .curve{display:flex;align-items:center;gap:56px;width:100%}
@@ -432,14 +466,14 @@ const S = [
   {label:'직접 답', steps:[{t:'질문'},{t:'답'}]},
   {label:'Chain-of-Thought', steps:[{t:'질문'},{t:'중간 추론 단계', c:'단계 1 → 2 → 3', key:1},{t:'답'}]}],
   note:'중간 추론 단계를 거쳐 답에 도달, 각 단계가 다음 단계의 근거'},
-{sec:'Planning', title:'Planning 구현', type:'hub',
+{sec:'Planning', title:'Planning 구현', type:'hub', rcap:'단계', rgroup:1, rloop:[2,1],
   left:[{t:'복잡한 작업'}],
   center:{t:'Planning'},
-  right:[{t:'Plan mode', c:'변경 없이 조사하고 계획 제안'},{t:'Tasks', c:'TaskCreate · TaskUpdate로 단계 관리'},{t:'계획 갱신', c:'진행하며 다음 단계 수정'}],
-  note:'계획을 먼저 세워 확인받고, 진행 상황을 목록으로 관리', src:'Claude Code 문서: plan mode (Shift+Tab, /plan), Tasks'},
+  right:[{t:'Plan mode', c:'실행 전: 변경 없이 조사하고 계획 제안'},{t:'Tasks', c:'실행 중: TaskCreate · TaskUpdate로 단계 관리'},{t:'계획 갱신', c:'실행 중: 진행하며 다음 단계 수정'}],
+  note:'실행 전에 계획을 세워 확인받고, 실행 중에는 단계 목록을 관리하며 계획을 고쳐 나감', src:'Claude Code 문서: plan mode (Shift+Tab, /plan), Tasks'},
 {sec:'Primitive AI Agent', title:'Primitive AI Agent', type:'equation',
-  items:['LLM','Tool Use','Memory','Agent Loop','Planning'], result:'Primitive AI Agent',
-  note:'다섯 요소를 갖춘 초기 형태의 에이전트'},
+  items:['LLM','Tool Use','Memory','Agent Loop',{t:'Planning', dim:1}], result:'Primitive AI Agent',
+  note:'LLM, Tool Use, Memory, Agent Loop가 기본'},
 
 {sec:'AI Agent 한계', title:'AI Agent 한계', type:'pairs', style:'solid', legend:[['solid','대응']], rows:[
   {a:{t:'Context window 한계', c:'Context window limit'}, b:{t:'Context engineering · Skills · Sub-agents', c:'⟨Context Engineering|Sub-agents⟩쪽'}},
@@ -452,6 +486,16 @@ const S = [
   foot:'사용 단계 비용: KV cache 메모리와 prefill 시간은 길이에 따라 늘어남',
   note:'길수록 attention은 품질을 떨어뜨리고, 위치 표현은 학습한 길이에서 창의 상한을 만듦',
   src:'Anthropic, Effective context engineering (2025) · StreamingLLM (2023) · Qwen3.8 모델 카드 (YaRN ×4)'},
+{sec:'Context Engineering', title:'Context window 초과', type:'ctxbars', limit:100, max:132,
+  legend2:[['sys','System prompt · Tools'],['doc','문서'],['hist','대화 이력 · Tool 결과'],['think','Thinking'],['out','Output']],
+  rows:[
+    {label:'1턴', segs:[['sys',10],['doc',18],['hist',4],['think',10],['out',4]]},
+    {label:'10턴', segs:[['sys',10],['doc',18],['hist',38],['think',10],['out',4]]},
+    {label:'30턴', segs:[['sys',10],['doc',26],['hist',60],['think',10],['out',4]]}],
+  limitLabel:'Context window 한도 (예: 200K 토큰)',
+  gen:{ctx:['대한민국','의',' 수도','는'], prev:[' 서울'], next:'입니다', cap:'생성한 토큰(흰 칸)은 입력 끝에 붙어 다음 토큰을 만들 때 다시 읽힘 (⟨LLM 토큰 생성⟩쪽): 출력도 창을 차지'},
+  note:'대화 이력과 문서가 턴마다 쌓여 창을 넘음: thinking과 출력도 같은 창의 토큰을 씀',
+  src:'막대는 개념도 (비율은 예시) · Thinking은 max_tokens에 포함: Osmani 2026'},
 {sec:'Context Engineering', title:'Lost in the middle', type:'curve',
   side:{t:'실험 결과', items:['중간 위치의 정답률이 문서 없이 답할 때보다 낮기도 함 (GPT-3.5)','문서를 20개에서 50개로 늘려도 1~1.5%만 오름','context 창이 긴 모델이 context를 더 잘 쓰지는 않음']},
   note:'필요한 정보가 긴 context의 중간에 있으면 잘 쓰지 못함 (다중 문서 QA, 문서 10~30개)', src:'Liu et al., 2023'},
@@ -665,7 +709,7 @@ function hub(s){
   /* 묶음 상자가 더 높아도 가운데 노드는 다른 hub 장과 같은 높이로 둡니다 */
   h+=pill({...s.center,key:1},'center', s.rgroup?`align-self:center;height:${n*ph+(n-1)*gap}px`:'');
   if(R.length && s.rgroup) h+=`<div class="arrows${L.length?'':' fixed'}">${arrow(s.rightStyle==='dash')}</div>`+
-    `<div class="col grp">${s.rcap?`<div class="ccap">${esc(s.rcap)}</div>`:''}${R.map((d,i)=>(i?'<div class="varr"><b></b><i></i></div>':'')+pill(d)).join('')}</div>`;
+    `<div class="col grp"${s.rloop?` data-loop="${s.rloop.join(',')}"`:''}>${s.rcap?`<div class="ccap">${esc(s.rcap)}</div>`:''}${R.map((d,i)=>(i?'<div class="varr"><b></b><i></i></div>':'')+pill(d)).join('')}${s.rloop?'<svg class="gloop" aria-hidden="true"></svg>':''}</div>`;
   else if(R.length) h+=`<div class="arrows${L.length?'':' fixed'}">${R.map(()=>arrow(s.rightStyle==='dash')).join('')}</div>`+
     `<div class="col">${s.rcap?`<div class="ccap">${esc(s.rcap)}</div>`:''}${R.map(d=>pill(d)).join('')}</div>`;
   h+='</div>';
@@ -735,8 +779,11 @@ function layers(s){
   s.rows.forEach(r=>{ h+=`<div class="lrow"><div class="llab"><b>${esc(r.label)}</b><span>${esc(r.cap)}</span></div>${r.items.map(t=>pill({t})).join('')}</div>`; });
   return h+'</div></div>';
 }
+/* items는 글자 또는 {t, dim}. dim은 꼭 필요하지 않은 요소라 흐리게(앞의 +도 함께) */
 function equation(s){
-  return `<div class="eq"><div class="eqrow">${s.items.map(t=>pill({t})).join('<span class="op">+</span>')}</div><div class="eqrow"><span class="op">=</span>${pill({t:s.result,key:1},'big')}</div></div>`;
+  const it=s.items.map(d=>typeof d==='string'?{t:d}:d);
+  const row=it.map((d,i)=>(i?`<span class="op${d.dim?' dim':''}">+</span>`:'')+pill({t:d.t},d.dim?'dim':'')).join('');
+  return `<div class="eq"><div class="eqrow">${row}</div><div class="eqrow"><span class="op">=</span>${pill({t:s.result,key:1},'big')}</div></div>`;
 }
 
 /* 캔버스: 노드 좌표를 정해 두고 화살표는 꺾은선으로 잇습니다 */
@@ -835,6 +882,29 @@ function attention(s){
   return `<div class="attn">${stk}${co}${g}</div>`;
 }
 
+/* Context window 막대 (개념도): 턴마다 쌓이는 토큰과 창 한도. 한도를 넘는 부분은 포인트 색 */
+function ctxbars(s){
+  const W=820, sc=W/s.max, lx=s.limit*sc;
+  const seg=(k,x,w)=>`<i class="cs ${k}" style="left:${(x*sc).toFixed(1)}px;width:${(w*sc).toFixed(1)}px"></i>`;
+  const rows=s.rows.map(r=>{
+    let x=0, h='';
+    r.segs.forEach(([k,w])=>{
+      const a=Math.max(0,Math.min(w,s.limit-x));
+      if(a>0) h+=seg(k,x,a);
+      if(w-a>0) h+=seg('over',x+a,w-a);
+      x+=w;
+    });
+    const over=x>s.limit;
+    return `<div class="crow"><div class="clab">${esc(r.label)}</div><div class="cbar" style="width:${W}px">${h}${over?`<span class="cover" style="left:${(x*sc+12).toFixed(1)}px">초과</span>`:''}</div></div>`;
+  }).join('');
+  const lg=`<div class="clg">${s.legend2.map(([k,t])=>`<span><i class="cs ${k}"></i>${esc(t)}</span>`).join('')}<span><i class="cs over"></i>초과분</span></div>`;
+  const ex=s.aside?`<div style="display:flex;gap:18px;justify-content:center">${s.aside.map(d=>pill(d,'','height:76px;width:330px')).join('')}</div>`:'';
+  /* gen: 토큰 생성 되짚기. 생성한 토큰이 입력 끝에 붙는 되돌림 화살표는 그린 뒤 drawGenBack()이 위치를 재서 그림 */
+  const g=s.gen;
+  const gen=g?`<div class="cgen"><div class="grow"><div class="gseq">${g.ctx.map(t=>`<span>${esc(t)}</span>`).join('')}${g.prev.map(t=>`<span class="o">${esc(t)}</span>`).join('')}</div>${arrow(false,'w48')}${pill({t:'LLM'},'llm gllm')}${arrow(false,'w48')}<span class="gnext">${esc(g.next)}</span></div><svg class="gback" aria-hidden="true"></svg><div class="gcap">${esc(g.cap)}</div></div>`:'';
+  return `<div class="cwin">${gen}${lg}<div class="crows" style="--lx:${lx.toFixed(1)}px">${rows}<div class="climit"><span>${esc(s.limitLabel)}</span></div></div>${s.eq?`<div class="ceq">${hl(s.eq)}</div>`:''}${ex}</div>`;
+}
+
 /* U자 곡선 (개념도) */
 function curve(s){
   const svg=`<svg width="560" height="330" viewBox="0 0 560 330" role="img" aria-label="관련 정보의 위치에 따른 정확도 개념도">
@@ -858,7 +928,7 @@ function toc(s){
   return `<div class="toc">${cols.map(c=>`<div>${c.map(row).join('')}</div>`).join('')}</div>`;
 }
 
-const R={hub,flow,flows,pairs,cards,table,code,code2,codefan,codeflow,cardscode,chat,tokens,layers,equation,canvas,loop,seq,attention,curve,toc};
+const R={hub,flow,flows,pairs,cards,table,code,code2,codefan,codeflow,cardscode,chat,tokens,layers,equation,canvas,loop,seq,attention,ctxbars,curve,toc};
 
 function render(s, i){
   if(s.type==='title') return `<section class="slide title-slide" data-i="${i}"><div class="kicker">${esc(s.kicker)}</div><div class="tl"><div class="bar"></div><h1>${br(s.title)}</h1><div class="sub">${esc(s.sub)}</div></div><div class="by">${esc(s.by)}</div></section>`;
@@ -873,6 +943,31 @@ function render(s, i){
 /* ---------- 조작 ---------- */
 const stage=document.getElementById('stage');
 stage.innerHTML=pageRefs(S.map(render).join(''));
+/* 묶음 상자 안의 반복 화살표(rloop: [아래 칸, 위 칸]): 아래 칸 오른쪽에서 위 칸 오른쪽으로 되돌아감 */
+(function drawLoops(){
+  document.querySelectorAll('.col.grp[data-loop]').forEach(g=>{
+    const [a,b]=g.dataset.loop.split(',').map(Number);
+    const ps=[...g.children].filter(e=>e.classList.contains('pill')), pa=ps[a], pb=ps[b], sv=g.querySelector('svg.gloop');
+    if(!pa||!pb||!sv) return;
+    const xr=Math.max(pa.offsetLeft+pa.offsetWidth, pb.offsetLeft+pb.offsetWidth);
+    const ya=pa.offsetTop+pa.offsetHeight/2, yb=pb.offsetTop+pb.offsetHeight/2, xo=xr+14;
+    sv.setAttribute('width',g.offsetWidth+60); sv.setAttribute('height',g.offsetHeight);
+    sv.innerHTML=`<path d="M${xr+2},${ya} H${xo} V${yb} H${xr+4}" fill="none" stroke="#1A1A18" stroke-width="2" marker-end="url(#ah)"/>`+
+      `<text x="${xo+8}" y="${((ya+yb)/2+5).toFixed(1)}" font-size="15" fill="#55554F">반복</text>`;
+  });
+})();
+/* 토큰 생성 띠의 되돌림 화살표: 새 토큰 아래에서 입력 끝으로 (offset 값은 장의 축소와 무관) */
+(function drawGenBack(){
+  document.querySelectorAll('.cgen').forEach(g=>{
+    const row=g.querySelector('.grow'), seq=g.querySelector('.gseq'), nx=g.querySelector('.gnext'), sv=g.querySelector('svg.gback');
+    if(!row||!seq||!nx||!sv) return;
+    const x1=row.offsetLeft+nx.offsetLeft+nx.offsetWidth/2, y1=row.offsetTop+nx.offsetTop+nx.offsetHeight;
+    const x2=row.offsetLeft+seq.offsetLeft+seq.offsetWidth-4, y2=row.offsetTop+seq.offsetTop+seq.offsetHeight;
+    const yb=Math.max(y1,y2)+18;
+    sv.setAttribute('width',g.offsetWidth); sv.setAttribute('height',yb+6);
+    sv.innerHTML=`<path d="M${x1},${y1+3} V${yb} H${x2} V${y2+5}" fill="none" stroke="#1A1A18" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#ah)"/>`;
+  });
+})();
 const slides=[...stage.querySelectorAll('.slide')];
 const cnt=document.getElementById('cnt'), list=document.getElementById('list');
 let cur=0;
@@ -906,9 +1001,7 @@ addEventListener('keydown',e=>{
   else if(e.key==='End') go(slides.length-1);
   else if(e.key==='g'||e.key==='G') toggleList();
 });
-let x0=null;
-addEventListener('touchstart',e=>{ x0=e.touches[0].clientX; },{passive:true});
-addEventListener('touchend',e=>{ if(x0===null) return; const dx=e.changedTouches[0].clientX-x0; if(Math.abs(dx)>40) go(cur+(dx<0?1:-1)); x0=null; });
+/* 터치 밀기로 넘기기는 뺐습니다(확대한 채 화면을 움직여도 장이 넘어가서). 넘기기는 버튼, 키보드, 목록으로 */
 addEventListener('hashchange',()=>{ const n=parseInt(location.hash.slice(1),10); if(n) go(n-1); });
 addEventListener('resize',fit);
 fit();
