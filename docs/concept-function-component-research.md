@@ -95,7 +95,7 @@
 
 ## 3부 구성요소
 
-출처: analysis-docs 세션의 `agent-modules/에이전트_구현모듈_대응표.md`(2026-11-26 조사, 각 프레임워크 최신 릴리스 태그 코드 기준, 태그 고정 링크 약 500개). 이 문서는 아직 푸시 전이라 사용자의 Mac에만 있습니다. 아래 GitHub 링크는 analysis-docs가 확인한 것이고, 이 세션에서는 네트워크 제한으로 다시 열어 보지 못했습니다.
+출처: analysis-docs 세션의 `agent-modules/에이전트_구현모듈_대응표.md`(2026-11-26 조사, 각 프레임워크 최신 릴리스 태그 코드 기준). 원본은 아직 푸시 전이라, 종합 문서 사본을 [sources/agent-modules-mapping.md](sources/agent-modules-mapping.md)에 두었습니다. 모듈마다 태그 고정 링크 2~3개, 도구 병렬 · 오류 처리 비교표가 있습니다. 아래 GitHub 링크는 analysis-docs가 확인한 것이고, 이 세션에서는 네트워크 제한으로 다시 열어 보지 못했습니다.
 
 하니스 쪽 학술 근거: [Meng 2026](https://www.preprints.org/manuscript/202604.0428)의 H=(E,T,C,S,L,V) = Execution loop, Tool registry, Context manager, State store, Lifecycle hooks, eValuation interface (중). [OpenAI 가이드](https://cdn.openai.com/business-guides-and-resources/a-practical-guide-to-building-agents.pdf)는 guardrails를 "layered defense"로 별도 장에서 다룸 (강).
 
@@ -132,7 +132,7 @@ CC = Claude Agent SDK v0.2.189 · OA = OpenAI Agents SDK v0.26.0 · LG = LangGra
 
 ### 읽는 법 (analysis-docs 보정 제안)
 
-- **빠진 모듈:** Loop guard · 예산(턴 · 비용 · 시간 한도, 재시도, fallback), Structured output · 종료 판정, 이벤트 스트림 · 전송 프로토콜, 도구 노출 관리(tool search, deferred loading), 모델 카탈로그 · 인증, Testing(가짜 모델).
+- **빠진 모듈:** Loop guard · 예산(턴 · 비용 · 시간 한도, 재시도, fallback), Structured output · 종료 판정, 이벤트 스트림 · 전송 프로토콜, 도구 노출 관리(tool search, deferred loading), 모델 카탈로그 · 인증, 실행 컨텍스트(DI), Testing(가짜 모델).
 - **합치지 말 것:** Model client와 Loop. OA, ADK, Pi, mini, opencode 모두 둘을 나눔.
 - **위계:**
   - M12 Hook · Middleware가 바닥 계층. 그 위에 compaction · todo · 권한 · HITL · skills가 플러그인으로 올라감(LangChain middleware, PyAI capability, Pi extension).
@@ -203,3 +203,4 @@ agent-evo-graph 덱(claude.ai 아티팩트)은 발전 순서로 짜여 있어, �
 - 2026-11-25: 문서 작성. ai-wiki, analysis-docs에 조사 요청
 - 2026-11-25: ai-wiki 답과 원문 확인으로 1부 개념 · 2부 기능 채움
 - 2026-11-26: analysis-docs 답으로 3부 구성요소 채움
+- 2026-11-26: analysis-docs 종합 문서 사본을 sources/agent-modules-mapping.md에 추가
