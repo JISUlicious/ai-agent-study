@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI Agent: 구성과 구현</title>
+<title>AI Agent 구성요소</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
@@ -46,6 +46,7 @@ body{word-break:keep-all;overflow-wrap:break-word}
 .pill.key{background:var(--accent);border-color:var(--accent)}
 .pill.key .t{font-weight:700}
 .pill.key .c{color:#2B1A12}
+.pill.prob:not(.key) .t{color:var(--accent);font-weight:700}
 
 /* 화살표 */
 .arr{display:flex;align-items:center}
@@ -68,7 +69,8 @@ body{word-break:keep-all;overflow-wrap:break-word}
 .varr{height:30px;flex:none;display:flex;flex-direction:column;align-items:center}
 .varr b{flex:1;border-left:2px solid var(--line)}
 .varr i{width:0;height:0;border-top:10px solid var(--line);border-left:7px solid transparent;border-right:7px solid transparent}
-.chips{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:34px;font-size:16px;color:var(--muted)}
+.chips{display:flex;flex-direction:column;align-items:flex-start;gap:10px;margin-top:34px;font-size:16px;color:var(--muted)}
+.chips .crow{display:flex;gap:10px;flex-wrap:wrap}
 .chips span{border:1.5px solid var(--muted);border-radius:999px;padding:4px 14px;color:var(--ink)}
 .stackv{display:flex;flex-direction:column;align-items:center;width:100%}
 
@@ -104,6 +106,9 @@ body{word-break:keep-all;overflow-wrap:break-word}
 .card .c{font-size:17px;color:var(--muted);line-height:1.45}
 .card.key{background:var(--accent);border-color:var(--accent)}
 .card.key .c{color:#2B1A12}
+.cardrows{display:flex;flex-direction:column;gap:20px;width:100%}
+.cardrow{display:flex;gap:20px;justify-content:center}
+.cardrow .card{flex:none}
 
 /* 표 */
 .tblwrap{width:100%;display:flex;flex-direction:column;gap:18px}
@@ -118,11 +123,15 @@ body{word-break:keep-all;overflow-wrap:break-word}
 
 /* 코드 */
 .cwrap{display:flex;gap:28px;width:100%;align-items:center}
+.duo{display:flex;gap:40px;width:100%}
+.dcol{flex:1;display:flex;flex-direction:column;gap:18px}
+.dcol .pill{align-self:stretch;min-height:80px}
+.dfoot{font-size:15px;color:var(--muted);line-height:1.4}
 .cblk{display:flex;flex-direction:column;min-width:0}
 .cblk.grow{flex:1 1 0}
 .cblk.fix{flex:none}
 .cblk .lab{font-size:15px;color:var(--muted);margin:0 0 8px 6px;font-weight:500}
-.code{font-family:var(--mono);font-size:17px;line-height:1.6;background:var(--soft);border-radius:20px;padding:20px 26px;white-space:pre;color:var(--ink);margin:0;overflow:hidden}
+.code{font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0;font-family:var(--mono);font-size:17px;line-height:1.6;background:var(--soft);border-radius:20px;padding:20px 26px;white-space:pre;color:var(--ink);margin:0;overflow:hidden}
 .code.wrap{white-space:normal;line-height:1.4;padding:18px 24px}
 .code.wrap .ln{white-space:pre-wrap;padding-left:2ch;text-indent:-2ch}
 .code.wrap .ln.gap{height:.6em}
@@ -176,9 +185,15 @@ body{word-break:keep-all;overflow-wrap:break-word}
 .eqrow .big .t{font-size:34px}
 .eqrow .dim{opacity:.38}
 .eqrow .pill.dim{border-style:dashed}
+.eqex{display:flex;gap:24px}
+.eqex .pill{height:82px;width:470px}
+.eqex .pill.alt{border-style:dashed}
 
 /* 캔버스 다이어그램 */
 .cv{position:relative;width:1120px;flex:none}
+.floatlg{position:absolute;right:80px;bottom:26px}
+.ctext.lgd{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px;white-space:nowrap}
+.ctext.lgd::before{content:'';width:28px;border-top:2px dashed var(--line)}
 .cvs{position:absolute;left:0;top:0;overflow:visible}
 .cvs path,.cvs line{fill:none;stroke:var(--line);stroke-width:2}
 .cvs .dash{stroke-dasharray:7 6}
@@ -188,14 +203,36 @@ body{word-break:keep-all;overflow-wrap:break-word}
 .cbox{position:absolute;border:2px solid var(--line);border-radius:24px}
 .cbox span{position:absolute;left:16px;top:8px;font-size:14px;color:var(--muted);font-weight:500;white-space:nowrap}
 .cbox.sub{border-style:dashed;border-radius:18px}
+.cbox.sm{border-radius:14px}
+.cbox.sm span{left:10px;top:3px;font-size:12px}
 .cnode{position:absolute;padding:0 12px;align-items:center;text-align:center;min-height:0}
 .cnode .t{font-size:15px;font-weight:600}
 .cnode .c{font-size:13px}
+.cnode.big .t{font-size:24px;font-weight:700}
+.cnode.big .c{font-size:15px}
+.cnode.mid .t{font-size:18px}
+.cnode.hk{gap:0;padding:0 8px}
+.cnode.hk .t{font-size:16px;font-weight:700}
+.cnode.hk .c{font-size:12px;white-space:nowrap}
+.cnode.sm{padding:0 4px;gap:0}
+.cnode.sm .t{font-size:12px;font-weight:500;white-space:nowrap;line-height:1.15}
+.cnode.rc{border-radius:6px}
+.cnode.ov{border-radius:50%}
+.cnode.db{border-radius:50%/24%}
+.cnode.dia{border:none;background:none}
+.cnode.dia::before,.cnode.dia::after{content:'';position:absolute;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.cnode.dia::before{inset:0;background:var(--line)}
+.cnode.dia{background:none !important}
+.cnode.dia::after{inset:3px 4px;background:var(--fill,var(--slide))}
+.cnode.dia .t{position:relative;z-index:1}
 .ctext{position:absolute;white-space:nowrap}
 .ctext.ct{font-size:22px;font-weight:700}
 .ctext.cc{font-size:15px;color:var(--muted)}
 .ap{position:absolute;transform:translate(-50%,-50%);min-height:72px;align-items:center;text-align:center;padding:9px 20px}
 .ap .t{font-size:22px;font-weight:700;white-space:nowrap}
+.ap.hk{width:126px;min-height:0;height:52px;padding:0 10px;gap:0;z-index:1}
+.ap.hk .t{font-size:16px}
+.ap.hk .c{font-size:13px;white-space:nowrap}
 .lp{position:relative;width:1120px;flex:none}
 
 /* 시퀀스 */
@@ -206,16 +243,22 @@ body{word-break:keep-all;overflow-wrap:break-word}
 .sq .ml .md{font-family:var(--font);fill:var(--muted)}
 .sq .life{stroke:var(--muted);stroke-dasharray:4 5;stroke-width:1.5}
 .sq .ret{stroke-dasharray:7 6}
+.sq line.key{stroke:var(--accent);stroke-width:2.5}
+.sq .ml.key{fill:var(--accent);font-weight:700}
+.sq .ml.key .md{fill:var(--ink);font-weight:500}
 
 /* Transformer */
 .attn{display:flex;align-items:center;gap:44px;width:100%}
 .stk{display:flex;flex-direction:column;align-items:stretch;width:330px;flex:none;position:relative}
 .blk{border:2px solid var(--line);border-radius:14px;height:50px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:500;background:var(--slide);text-align:center;padding:0 10px}
 .blk.key{background:var(--accent);border-color:var(--accent);font-weight:700}
-.blk.pos{border-style:dashed}
 .conn{height:14px;width:2px;background:var(--line);align-self:center}
-.rep{position:absolute;right:-56px;top:64px;height:114px;width:22px;border:2px solid var(--muted);border-left:none;border-radius:0 10px 10px 0}
-.rep span{position:absolute;left:30px;top:44px;font-size:16px;color:var(--muted);white-space:nowrap}
+.layer{position:relative;display:flex;flex-direction:column;align-items:stretch}
+.pair{display:flex;gap:20px}
+.col2{flex:1;display:flex;flex-direction:column}
+.blk.pe{font-size:15px;line-height:1.15}
+.rep{position:absolute;right:-56px;top:0;bottom:0;width:22px;border:2px solid var(--muted);border-left:none;border-radius:0 10px 10px 0}
+.rep span{position:absolute;left:30px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--muted);white-space:nowrap}
 .callouts{flex:1;display:flex;flex-direction:column;gap:16px;padding-left:96px}
 .co .t{font-size:21px;font-weight:700}
 .co .c{font-size:16px;color:var(--muted);line-height:1.4}
@@ -304,6 +347,7 @@ body{word-break:keep-all;overflow-wrap:break-word}
   <defs>
     <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1A1A18"/></marker>
     <marker id="ahs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1A1A18"/></marker>
+    <marker id="ahk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#F0591E"/></marker>
   </defs>
 </svg>
 <main id="stage" aria-live="polite"></main>
@@ -318,12 +362,12 @@ body{word-break:keep-all;overflow-wrap:break-word}
 <script>
 /* 슬라이드 내용. 키워드와 짧은 한 줄만 둡니다. check:1은 사실 확인 중인 장입니다. */
 const S = [
-{type:'title', kicker:'AI Agent Study', title:'AI Agent: 구성과 구현', sub:'LLM에서 범용 에이전트까지', by:'[발표자] · [날짜]'},
+{type:'title', kicker:'AI Agent Study', title:'AI Agent 구성요소', sub:'LLM에서 범용 에이전트까지', by:'Jisu Hong · 27th.Nov.2026'},
 /* 목차 항목: [제목, 첫 섹션, 끝 섹션]. 섹션을 생략하면 제목과 같은 섹션. 쪽 범위는 각 장의 sec로 계산합니다 */
 {type:'toc', title:'목차', items:[
   ['AI Agent 구성요소','구성요소'],['LLM'],['Tool Use'],['ReAct'],['Memory'],['Agent Loop'],
   ['Planning'],['Primitive AI Agent'],['AI Agent 한계'],['Context Engineering'],['Agent Skills'],['Sub-agents'],
-  ['MCP'],['Hook'],['Hook · Controls','Hook · Controls','Controls · Sandbox'],['Hook · Verification'],['General-Purpose AI Agent'],['Evaluation']]},
+  ['MCP'],['Hook'],['Hook · Controls','Hook · Controls','Controls · Sandbox'],['Hook · Verification'],['General-Purpose AI Agent'],['Evaluation'],['정리']]},
 
 {sec:'구성요소', title:'AI Agent 구성요소', type:'layers', key:'AI Agent', rows:[
   {label:'L1', cap:'기본 구성', items:['LLM','Tool','Memory','Agent Loop']},
@@ -344,23 +388,40 @@ const S = [
   q:'Python에서 리스트를 뒤집는 방법은?',
   a:'reverse() 메서드를 쓰거나, [::-1] 슬라이싱으로 뒤집은 새 리스트를 만듭니다.',
   note:'질문도 문장의 앞부분, 답은 그 뒤에 이어질 토큰을 생성한 결과'},
+{sec:'LLM', title:'In-context learning', type:'duo', fs:21, cols:[
+  {t:'예시로 보여 주기 (few-shot)', c:'입력과 출력 예를 몇 개 넣음', code:'사과 → apple\n고양이 → cat\n학교 →\n⟪출력: school⟫', foot:'Pre-training 규모가 커질수록 강해짐 (GPT-3, Brown et al., 2020)'},
+  {t:'지시로 시키기 (zero-shot)', c:'할 일을 말로 지시함', code:'다음 단어를 영어로 번역하세요.\n학교\n\n⟪출력: school⟫', foot:'Instruction following: instruction tuning(FLAN, 2021)과\nRLHF(InstructGPT, 2022)로 크게 강화, 규모만으로는 부족'}],
+  note:'가중치를 바꾸지 않고 prompt만으로 과제를 정함',
+  src:'Brown et al., 2020 (Figure 2.1 방식) · Ouyang et al., 2022'},
+{sec:'LLM', title:'LLM Prompt 구성', type:'codeflow', fs:17,
+  steps:[{t:'Messages', c:'System · User · Assistant\n역할별 메시지'},{t:'Chat template', c:'역할 표시 토큰으로\n이어 붙임', key:1},{t:'토큰 열', c:'하나의 입력'},{t:'LLM', c:'assistant 뒤를\n이어 생성'}],
+  code:'<|im_start|>system\n너는 Python 강사다. 짧게 답한다.<|im_end|>\n<|im_start|>user\n리스트를 뒤집는 방법은?<|im_end|>\n⟦<|im_start|>assistant⟧\n⟪← 모델은 여기서부터 이어서 생성 (Qwen3는 thinking 설정에 따라 <think> 블록부터)⟫',
+  note:'역할별 메시지를 chat template으로 이어 붙인 토큰 열이 prompt: 모델은 그 뒤를 이어 씀',
+  src:'Qwen chat template (ChatML 형식) · 지시를 따르는 것은 instruction tuning(Wei et al., 2021 FLAN)과 RLHF(Ouyang et al., 2022)의 결과'},
+{sec:'LLM', title:'Prompt engineering', type:'cards', cols:2, cards:[
+  {t:'역할 지정', c:'System prompt에 역할과 배경 정보를 줌\n예: 너는 Python 강사다'},
+  {t:'명확한 지시', c:'할 일과 제약을 구체적으로 씀\n예: 세 줄 이내, 코드 예 포함'},
+  {t:'예시 (few-shot)', c:'입력과 출력 예를 몇 개 보여 줌\nIn-context learning', key:1},
+  {t:'출력 형식', c:'JSON · XML 태그로 형식을 정함\n예: JSON으로만 답하게 함 (⟨JSON 출력⟩쪽)'}],
+  note:'모델 가중치를 바꾸지 않고\n입력(지시 · 예시 · 형식)만 설계해 원하는 출력을 얻는 일',
+  src:'Weng 2023 · Anthropic, Effective context engineering (2025) · Brown et al., 2020 (few-shot, ICL)'},
 {sec:'LLM', title:'LLM 한계', type:'pairs', style:'dash', legend:[['dash','원인']], rows:[
-  {a:{t:'Next token prediction', c:'그럴듯한 다음 토큰'}, b:{t:'Hallucination', c:'사실과 다른 내용을 생성'}},
-  {a:{t:'Training dataset', c:'학습 시점에 고정'}, b:{t:'지식 한계', c:'최신 정보 · 내부 자료 없음'}},
-  {a:{t:'복잡한 작업', c:'여러 단계를 한 번에 처리'}, b:{t:'추론 한계', c:'다단계 추론에서 실수'}}],
+  {a:{t:'Next token prediction', c:'그럴듯한 다음 토큰'}, b:{t:'Hallucination', c:'사실과 다른 내용을 생성', prob:1}},
+  {a:{t:'Training dataset', c:'학습 시점에 고정'}, b:{t:'지식 한계', c:'최신 정보 · 내부 자료 없음', prob:1}},
+  {a:{t:'복잡한 작업', c:'여러 단계를 한 번에 처리'}, b:{t:'추론 한계', c:'다단계 추론에서 실수', prob:1}}],
   note:'다음 토큰을 고르는 방식, 고정된 학습 데이터, 복잡한 작업에서 생기는 세 한계'},
 {sec:'LLM', title:'한계 극복 1: RAG', type:'hub', lcap:'한계', rcap:'단계', rgroup:1,
-  left:[{t:'지식 한계'},{t:'Hallucination'}],
+  left:[{t:'지식 한계', prob:1},{t:'Hallucination', prob:1}],
   center:{t:'RAG', c:'Retrieval-Augmented Generation'},
   right:[{t:'Retrieval', c:'관련 문서 검색'},{t:'Augmentation', c:'프롬프트에 문서 추가'},{t:'Generation', c:'문서를 근거로 생성'}],
   note:'필요한 지식을 검색해 넣고 생성, 환각을 줄이지만 없애지는 못함', src:'Lewis et al., 2020'},
 {sec:'LLM', title:'한계 극복 2: Chain-of-Thought', type:'hub', lcap:'한계',
-  left:[{t:'추론 한계'}],
+  left:[{t:'추론 한계', prob:1}],
   center:{t:'Chain-of-Thought', c:'CoT'},
   right:[{t:'중간 단계 생성', c:'풀이 과정을 먼저 씀'},{t:'단계별 풀이', c:'앞 단계가 다음 단계의 근거'},{t:'정확도 향상', c:'수학 · 논리 문제'}],
   note:'답 전에 풀이 과정을 생성하게 해 다단계 추론을 도움', src:'Wei et al., 2022'},
 {sec:'LLM', title:'한계 극복 3: Prompt chaining', type:'hub', lcap:'한계', rcap:'단계', rgroup:1,
-  left:[{t:'추론 한계'}],
+  left:[{t:'추론 한계', prob:1}],
   center:{t:'Prompt chaining', c:'작은 단계로 분해'},
   right:[{t:'LLM 호출 1', c:'개요 작성'},{t:'Gate', c:'중간 결과 검사'},{t:'LLM 호출 2', c:'앞 출력으로 본문 작성'}],
   note:'한 번에 풀기 어려운 작업을 단계로 나누고, 앞 단계 출력을 다음 단계 입력으로', src:'Anthropic, Building Effective Agents (2024)'},
@@ -384,10 +445,10 @@ const S = [
 {sec:'Tool Use', title:'JSON 출력', type:'code2', blocks:[
   {label:'Prompt', code:'다음 요청에서 도시와 날짜를 뽑아\nJSON으로만 답하세요.\n⟦형식: {"city": "...", "date": "..."}⟧\n\n요청: 내일 부산 날씨 어때?'},
   {label:'Output', code:'{"city": "부산", "date": "내일"}'}],
-  aside:[{t:'Instruction following', c:'지시한 형식을 따름'},{t:'In-context learning', c:'예시로 형식을 익힘'}],
+  aside:[{t:'Instruction following', c:'지시한 형식을 따름 (⟨In-context learning⟩쪽)'},{t:'In-context learning', c:'예시로 형식을 익힘 (⟨In-context learning⟩쪽)'}],
   note:'지시와 형식 예시만으로 프로그램이 읽을 수 있는 JSON을 출력'},
 {sec:'Tool Use', title:'Tool call 프롬프트 템플릿', type:'code2', fs:14, blocks:[
-  {label:'입력 · Qwen3.5 chat template 중 tool call 형식 부분 (도구 목록 <tools> 다음에 붙음)', fs:12, wrap:1, code:'If you choose to call a function ONLY reply in the following format with NO suffix:\n\n⟦<tool_call>⟧\n<function=example_function_name>\n<parameter=example_parameter_1>\nvalue_1\n</parameter>\n<parameter=example_parameter_2>\nThis is the value for the second parameter\nthat can span\nmultiple lines\n</parameter>\n</function>\n⟦</tool_call>⟧\n\n<IMPORTANT>\nReminder:\n- Function calls MUST follow the specified format: an inner <function=...></function> block must be nested within <tool_call></tool_call> XML tags\n- Required parameters MUST be specified\n- You may provide optional reasoning for your function call in natural language BEFORE the function call, but NOT after\n- If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls\n</IMPORTANT>'},
+  {label:'입력 · Qwen3.5 chat template 중 tool call 형식 부분 (도구 목록 <tools> 다음에 붙음)', wrap:1, code:'If you choose to call a function ONLY reply in the following format with NO suffix:\n\n⟦<tool_call>⟧\n<function=example_function_name>\n<parameter=example_parameter_1>\nvalue_1\n</parameter>\n<parameter=example_parameter_2>\nThis is the value for the second parameter\nthat can span\nmultiple lines\n</parameter>\n</function>\n⟦</tool_call>⟧'},
   {label:'출력 · "서울 날씨 알려줘"에 대한 호출', code:'⟦<tool_call>⟧\n<function=get_weather>\n<parameter=city>\nSeoul\n</parameter>\n</function>\n⟦</tool_call>⟧'}],
   note:'템플릿이 알려 준 형식대로 모델이 호출을 씀',
   src:'Qwen3.5 chat template · 참고: Qwen3 · Qwen2.5는 <tool_call> 안에 JSON (vLLM 문서)'},
@@ -442,15 +503,15 @@ const S = [
   src:'에이전트: 환경의 피드백을 받으며 루프 안에서 도구를 쓰는 LLM (Building Effective Agents, 2024)'},
 
 {sec:'Planning', title:'LLM 한계 극복 현황', type:'pairs', legend:[['solid','대응'],['dash','원인']], rows:[
-  {a:{t:'Hallucination', c:'사실과 다른 내용을 생성'}, b:{t:'RAG · Tool call', c:'근거를 찾아 넣어 환각을 줄이고\n최신 · 내부 정보를 보충', span:2}},
-  {a:{t:'지식 한계', c:'최신 정보 · 내부 자료 없음'}},
-  {a:{t:'추론 한계', c:'CoT · Prompt chaining으로 일부 대응'}, b:{t:'복잡한 작업 오작동', c:'에이전트의 긴 작업에서 다시 드러남', key:1}, style:'dash'}],
-  note:'환각과 지식 한계는 RAG와 Tool call로 대응했고, 남은 추론 한계는 복잡한 작업에서 오작동으로 드러남'},
+  {a:{t:'Hallucination', c:'부분 해소: 줄었지만 남아 있음', prob:1}, b:{t:'RAG · Tool call', c:'근거를 찾아 넣어 환각을 줄이고\n최신 · 내부 정보를 보충', span:2}},
+  {a:{t:'지식 한계', c:'최신 정보 · 내부 자료 없음', prob:1}},
+  {a:{t:'추론 한계', c:'CoT · Prompt chaining으로 일부 대응', prob:1}, b:{t:'복잡한 작업 오작동', c:'에이전트의 긴 작업에서 다시 드러남', key:1, prob:1}, style:'dash'}],
+  note:'환각은 부분 해소, 지식 한계는 보충: 남은 추론 한계는 복잡한 작업에서 오작동으로 드러남'},
 {sec:'Planning', title:'복잡한 작업 오작동', type:'hub', rightStyle:'dash', legend:[['dash','오작동 (예시)']],
   center:{t:'복잡한 작업', c:'기능 추가 + 테스트 + 문서'},
   right:[{t:'단계 누락', c:'테스트를 건너뜀'},{t:'순서 오류', c:'구현 전에 문서부터'},{t:'완료 착각', c:'일부만 하고 끝냄'}],
   note:'단계가 많은 작업은 빠뜨리거나 순서를 어기기 쉬움'},
-{sec:'Planning', title:'Prompt chaining 재검토', type:'flows', rows:[
+{sec:'Planning', title:'Prompt chaining 다시 보기', type:'flows', rows:[
   {label:'Prompt chaining', steps:[{t:'사람이 단계 설계'},{t:'정해진 순서로 실행'},{t:'결과'}]},
   {label:'Planning', steps:[{t:'모델이 계획 수립', key:1},{t:'계획대로 실행'},{t:'진행 확인 · 수정'}]}],
   note:'Prompt chaining은 사람이 단계를 정하고, Planning은 모델이 작업에 맞춰 단계를 세움'},
@@ -460,45 +521,51 @@ const S = [
     {label:'CoT 미적용 (Zero-shot) → 8 ✗', code:'A: The answer (arabic numerals) is\n8 ✗'},
     {label:'CoT 적용 (Zero-shot-CoT) → 4 ✓', code:'A: ⟦Let\'s think step by step.⟧\nThere are 16 balls in total.\nHalf of the balls are golf balls.\nThat means that there are 8 golf balls.\nHalf of the golf balls are blue.\nThat means that there are 4 blue golf balls. ✓'}],
   aside:[{t:'Last Letter 0.2% → 57.6%', c:'수학 밖 과제 · 기호'},{t:'Coin Flip 12.8% → 91.4%', c:'수학 밖 과제 · 기호'},{t:'Date 49.3% → 67.5%', c:'수학 밖 과제 · 논리'}],
-  note:'질문은 그대로 두고 답의 첫 줄만 바꿔 풀이를 먼저 쓰게 하면 오답이 정답으로 바뀜',
+  note:'질문은 그대로 두고 답의 첫 줄만 바꿔 풀이를 먼저 쓰게 하면 정답률이 개선됨',
   src:'Kojima et al., 2022: Figure 1 (GPT-3 출력) · Table 1 (text-davinci-002, Zero-shot → Zero-shot-CoT)'},
 {sec:'Planning', title:'CoT 구조', type:'flows', rows:[
   {label:'직접 답', steps:[{t:'질문'},{t:'답'}]},
   {label:'Chain-of-Thought', steps:[{t:'질문'},{t:'중간 추론 단계', c:'단계 1 → 2 → 3', key:1},{t:'답'}]}],
   note:'중간 추론 단계를 거쳐 답에 도달, 각 단계가 다음 단계의 근거'},
 {sec:'Planning', title:'Planning 구현', type:'hub', rcap:'단계', rgroup:1, rloop:[2,1],
-  left:[{t:'복잡한 작업'}],
+  left:[{t:'복잡한 작업', prob:1}],
   center:{t:'Planning'},
   right:[{t:'Plan mode', c:'실행 전: 변경 없이 조사하고 계획 제안'},{t:'Tasks', c:'실행 중: TaskCreate · TaskUpdate로 단계 관리'},{t:'계획 갱신', c:'실행 중: 진행하며 다음 단계 수정'}],
   note:'실행 전에 계획을 세워 확인받고, 실행 중에는 단계 목록을 관리하며 계획을 고쳐 나감', src:'Claude Code 문서: plan mode (Shift+Tab, /plan), Tasks'},
 {sec:'Primitive AI Agent', title:'Primitive AI Agent', type:'equation',
   items:['LLM','Tool Use','Memory','Agent Loop',{t:'Planning', dim:1}], result:'Primitive AI Agent',
-  note:'LLM, Tool Use, Memory, Agent Loop가 기본'},
+  ex:[{t:'예: AutoGPT (2023-03)', c:'검색 · 파일 · 코드 실행, 단기 · 장기 기억\n사람 개입 없이 반복'},
+      {t:'Devin (2024-03): Planning 포함', c:'셸 · 에디터 · 브라우저로\n계획을 세워 끝까지 작업', alt:1}],
+  note:'LLM, Tool Use, Memory, Agent Loop가 기본',
+  src:'AutoGPT: Weng 2023이 인용한 시스템 프롬프트 · Devin: Cognition 발표 (2024-03-12)'},
 
 {sec:'AI Agent 한계', title:'AI Agent 한계', type:'pairs', style:'solid', legend:[['solid','대응']], rows:[
-  {a:{t:'Context window 한계', c:'Context window limit'}, b:{t:'Context engineering · Skills · Sub-agents', c:'⟨Context Engineering|Sub-agents⟩쪽'}},
-  {a:{t:'조기 종료', c:'Stops before the task is done'}, b:{t:'Goal loop · Verification', c:'⟨Hook · Verification⟩쪽'}},
-  {a:{t:'비결정성', c:'Non-deterministic behavior'}, b:{t:'Controls', c:'⟨Hook 판정 구조|Controls · Sandbox⟩쪽'}}],
+  {a:{t:'Context window 한계', c:'Context window limit', prob:1}, b:{t:'Context engineering', c:'⟨Context Engineering|Sub-agents⟩쪽'}},
+  {a:{t:'비결정론적 동작', c:'Non-deterministic behavior', prob:1}, b:{t:'Controls', c:'⟨Hook · Controls|Controls · Sandbox⟩쪽'}},
+  {a:{t:'조기 종료', c:'Stops before the task is done', prob:1}, b:{t:'Goal loop · Verification', c:'⟨Hook · Verification⟩쪽'}}],
   note:'작업이 길고 복잡해지면서 드러난 세 한계와 그 대응'},
-{sec:'Context Engineering', title:'Transformer 구조 한계', type:'attention', items:[
-  {t:'Attention budget → 품질 저하', c:'Self-attention: 토큰이 늘수록 주의가 n²쌍에 얇게 퍼짐\n필요한 정보를 놓치고, 중간 위치에서 특히 심함 (다음 장)'},
-  {t:'학습 길이 → Context window 상한', c:'Positional encoding(RoPE): 학습한 길이를 넘는 위치에서 attention이 무너짐\nRoPE 조정 · YaRN과 추가 학습으로 늘림 (예: 256K → 1M)'}],
+{sec:'Context Engineering', title:'Transformer 구조 한계 1: Attention budget', type:'attention', items:[
+  {t:'Attention budget → 품질 저하', c:'Self-attention: 토큰이 늘수록 주의가 n²쌍에 얇게 퍼짐\n필요한 정보를 놓치고, 중간 위치에서 특히 심함'}],
+  note:'context가 길수록 attention이 얇게 퍼져 품질이 떨어짐',
+  src:'Anthropic, Effective context engineering (2025)'},
+{sec:'Context Engineering', title:'Lost in the middle', type:'curve',
+  side:{t:'실험 결과', items:['중간 위치의 정답률이 문서 없이 답할 때보다 낮기도 함 (GPT-3.5)','문서를 20개에서 50개로 늘려도 1~1.5%만 오름','context 창이 긴 모델이 context를 더 잘 쓰지는 않음']},
+  note:'필요한 정보가 긴 context의 중간에 있으면 잘 쓰지 못함 (다중 문서 QA, 문서 10~30개)', src:'Liu et al., 2023'},
+{sec:'Context Engineering', title:'Transformer 구조 한계 2: Context window 상한', type:'attention', key:'pe', grid:0, items:[
+  {t:'학습 길이 → Context window 상한', c:'Positional encoding: 학습한 길이를 넘는 위치에서 attention이 무너짐\nPositional encoding 조정(YaRN 등)으로 늘림: 방법에 따라 짧은 추가 학습\n예: Qwen3.8-Flash-Next는 256K로 학습, YaRN ×4 설정으로 1M'}],
   foot:'사용 단계 비용: KV cache 메모리와 prefill 시간은 길이에 따라 늘어남',
-  note:'길수록 attention은 품질을 떨어뜨리고, 위치 표현은 학습한 길이에서 창의 상한을 만듦',
-  src:'Anthropic, Effective context engineering (2025) · StreamingLLM (2023) · Qwen3.8 모델 카드 (YaRN ×4)'},
+  note:'창의 상한은 학습한 길이와 Positional encoding이 정함: KV cache와 prefill은 사용 단계의 비용',
+  src:'Teng 2026 서베이 · StreamingLLM (2023) · Qwen3.8-Flash-Next 설정 (YaRN ×4)'},
 {sec:'Context Engineering', title:'Context window 초과', type:'ctxbars', limit:100, max:132,
   legend2:[['sys','System prompt · Tools'],['doc','문서'],['hist','대화 이력 · Tool 결과'],['think','Thinking'],['out','Output']],
   rows:[
-    {label:'1턴', segs:[['sys',10],['doc',18],['hist',4],['think',10],['out',4]]},
-    {label:'10턴', segs:[['sys',10],['doc',18],['hist',38],['think',10],['out',4]]},
-    {label:'30턴', segs:[['sys',10],['doc',26],['hist',60],['think',10],['out',4]]}],
+    {label:'1턴', segs:[['sys',6],['doc',2],['hist',1],['think',10],['out',4]]},
+    {label:'10턴', segs:[['sys',6],['doc',10],['hist',18],['think',10],['out',4]]},
+    {label:'30턴', segs:[['sys',6],['doc',28],['hist',62],['think',10],['out',4]]}],
   limitLabel:'Context window 한도 (예: 200K 토큰)',
   gen:{ctx:['대한민국','의',' 수도','는'], prev:[' 서울'], next:'입니다', cap:'생성한 토큰(흰 칸)은 입력 끝에 붙어 다음 토큰을 만들 때 다시 읽힘 (⟨LLM 토큰 생성⟩쪽): 출력도 창을 차지'},
   note:'대화 이력과 문서가 턴마다 쌓여 창을 넘음: thinking과 출력도 같은 창의 토큰을 씀',
   src:'막대는 개념도 (비율은 예시) · Thinking은 max_tokens에 포함: Osmani 2026'},
-{sec:'Context Engineering', title:'Lost in the middle', type:'curve',
-  side:{t:'실험 결과', items:['중간 위치의 정답률이 문서 없이 답할 때보다 낮기도 함 (GPT-3.5)','문서를 20개에서 50개로 늘려도 1~1.5%만 오름','context 창이 긴 모델이 context를 더 잘 쓰지는 않음']},
-  note:'필요한 정보가 긴 context의 중간에 있으면 잘 쓰지 못함 (다중 문서 QA, 문서 10~30개)', src:'Liu et al., 2023'},
 {sec:'Context Engineering', title:'Context engineering 개념', type:'canvas', h:380,
   texts:[{x:0,y:0,t:'Prompt engineering',cls:'ct'},{x:600,y:0,t:'Context engineering',cls:'ct'},
     {x:0,y:330,t:'한 번 작성한 지시',cls:'cc'},{x:600,y:340,t:'가능한 정보 중 이번 턴에 필요한 것만 고름',cls:'cc'}],
@@ -527,9 +594,9 @@ const S = [
   note:'context에 들어가는 모든 것이 관리 대상'},
 {sec:'Context Engineering', title:'Context engineering 구현', type:'hub',
   center:{t:'Context engineering'},
-  right:[{t:'Hook', c:'턴 시작 · context 조립 지점에서 추가'},{t:'Middleware · Callback', c:'모델 호출 전 messages 수정'},{t:'Plugin', c:'하니스에 context 처리 추가'},{t:'Compaction', c:'오래된 기록을 요약으로 교체'}],
-  note:'하니스가 정해진 지점에 끼우는 코드로 context를 조립하고 줄임',
-  src:'예: Pi context, opencode session.context, OpenClaw before_prompt_build'},
+  right:[{t:'Transcript', c:'메시지 · 도구 결과를 쌓은 기록'},{t:'Tool call', c:'필요할 때 불러옴 (Skill · MCP 포함)'},{t:'Hook', c:'정해진 지점에서 context 수정'},{t:'Compaction', c:'오래된 기록을 요약으로 교체'}],
+  note:'transcript를 바탕으로 매 턴 context를 조립하고, tool call로 필요할 때 불러오고, hook으로 더하거나 고치고, compaction으로 줄임',
+  src:'Hook 예: Pi context, opencode session.context, OpenClaw before_prompt_build'},
 
 {sec:'Agent Skills', title:'Agent Skills 개념', type:'flow', steps:[
   {t:'Metadata', c:'name · description\n시작할 때 모든 skill (~100 토큰)'},
@@ -537,7 +604,7 @@ const S = [
   {t:'Resources', c:'scripts · references · assets\n필요할 때만'}],
   note:'필요할 때만 불러오는 특정 작업의 지시서: 평소에는 이름과 설명만 context에 둠',
   src:'Progressive disclosure · Agent Skills spec, Anthropic engineering blog'},
-{sec:'Agent Skills', title:'Agent Skills 구성', type:'hub', lcap:'구성', rcap:'역할 (발표자 해석)',
+{sec:'Agent Skills', title:'Agent Skills 구성', type:'hub', lcap:'구성', rcap:'역할',
   left:[{t:'SKILL.md', c:'필수 · name · description + 지시'},{t:'references/', c:'선택 · 참고 문서'},{t:'scripts/', c:'선택 · 실행 코드'},{t:'assets/', c:'선택 · 템플릿 · 이미지 · 데이터'}],
   center:{t:'Agent Skill', c:'폴더 하나'},
   right:[{t:'Instruction', c:'작업 방법'},{t:'Tool', c:'scripts/ 실행 (새 도구 정의는 아님)'},{t:'Context engineering', c:'필요한 만큼만 로드'}],
@@ -553,15 +620,15 @@ const S = [
   edges:[['o','b','w1','t'],['o','b','w2','t'],['o','b','w3','t'],['a1','r','a2','l',{label:'작업 넘김'}],['a2','b','a3','r'],['a3','l','a1','b']],
   note:'기능 · 역할 단위로 작업을 나눠 맡김', src:'Anthropic, Building Effective AI Agents (2025)'},
 {sec:'Sub-agents', title:'Sub-agent 목적', type:'hub',
-  left:[{t:'Main agent', c:'Tool call로 생성'}],
+  left:[{t:'Main agent', c:'Tool call로 sub-agent를 생성'}],
   center:{t:'Sub-agent', c:'별도의 Agent loop'},
-  right:[{t:'Context 분리', c:'자기 context에서 작업'},{t:'격리', c:'도구 · 권한 제한'},{t:'효율', c:'요약만 반환 (1,000~2,000 토큰)'}],
-  note:'도구 호출로 띄운 별도 루프가 따로 일하고 결과만 돌려줌', src:'Anthropic, Effective context engineering (2025)'},
+  right:[{t:'Context 분리', c:'자기 context에서 작업'},{t:'격리', c:'도구 · 권한 제한'},{t:'효율', c:'요약만 반환'}],
+  note:'도구 호출로 띄운 별도 루프가 따로 일하고 결과를 돌려줌', src:'Anthropic, Effective context engineering (2025)'},
 
 {sec:'MCP', title:'MCP 개념', type:'hub',
   left:[{t:'AI Agent', c:'Claude Code · IDE · 앱'}],
   center:{t:'MCP', c:'Model Context Protocol'},
-  right:[{t:'Tool calling 표준화', c:'한 번 만든 서버를 여러 앱에서'},{t:'에이전트용 API', c:'설명 · 입력 형식을 함께 제공'}],
+  right:[{t:'Tool calling 표준화', c:'한 번 만든 서버를 여러 앱에서'},{t:'도구 활용 context 제공', c:'도구 설명과 입력 형식을 포함한 API'}],
   note:'에이전트와 도구를 잇는 방식을 표준으로 정한 프로토콜', src:'Model Context Protocol (Anthropic)'},
 {sec:'MCP', title:'MCP 구성요소', type:'cardscode',
   cards:[{t:'Tools', c:'모델이 호출하는 함수', key:1},{t:'Resources', c:'사용자나 모델이 쓰는 context · 데이터'},{t:'Prompts', c:'사용자를 위한 메시지 템플릿 · workflow'}],
@@ -570,7 +637,7 @@ const S = [
   code:'{\n  "name": "get_weather",\n  "description": "도시의 현재 날씨를 조회",\n  ⟦"inputSchema"⟧: {\n    "type": "object",\n    "properties": { "city": { "type": "string" } },\n    "required": ["city"]\n  }\n}',
   note:'Tool 설명과 입력 스키마가 context로 들어가 모델이 바로 쓸 수 있음'},
 {sec:'MCP', title:'MCP 구조', type:'canvas', h:340,
-  boxes:[{id:'host',x:0,y:20,w:360,h:300,label:'Host (Claude Code 등)'}],
+  boxes:[{id:'host',x:0,y:20,w:360,h:300,label:'Host (AI Agent)'}],
   nodes:[{id:'c1',x:50,y:90,w:260,h:60,t:'MCP client'},{id:'c2',x:50,y:220,w:260,h:60,t:'MCP client'},
     {id:'s1',x:470,y:90,w:270,h:60,t:'MCP server',c:'stdio (예: 로컬)',key:1},{id:'s2',x:470,y:220,w:270,h:60,t:'MCP server',c:'Streamable HTTP (예: 원격)',key:1},
     {id:'r1',x:850,y:90,w:270,h:60,t:'파일 · Git'},{id:'r2',x:850,y:220,w:270,h:60,t:'외부 API · DB'}],
@@ -578,37 +645,67 @@ const S = [
   note:'Host 안의 MCP client가 MCP server와 하나씩 연결해 도구를 씀', src:'MCP 스펙 architecture: host가 client를 만들고, client와 server는 1:1'},
 {sec:'MCP', title:'MCP 호출 과정', type:'seq', a:'MCP client', b:'MCP server', msgs:[
   ['>','server/discover','선택 · 지원 버전 확인'],['<','result','서버 버전 · 기능'],
-  ['>','tools/list','+ _meta'],['<','result','tools · ttlMs · cacheScope'],
-  ['>','tools/call','get_weather + _meta'],['<','result','resultType: complete · content']],
+  ['>','tools/list','필요할 때 불러오는 도구 목록',{key:1}],['<','result','도구 설명 · inputSchema → context',{key:1}],
+  ['>','tools/call','get_weather + arguments'],['<','result','resultType: complete · content']],
   side:[{t:'_meta (모든 요청)', c:'protocolVersion · clientCapabilities 필수\nclientInfo 권장'},{t:'2025-11-25판과 차이', c:'initialize 핸드셰이크와 ping 없음\n모든 결과에 resultType\n(input_required면 입력을 실어 다시 요청)'}],
   note:'연결 절차 없이 요청마다 버전과 기능을 실어 보내는 stateless 방식',
   src:'MCP 스펙 2026-07-28 (changelog, schema.ts)'},
 
-{sec:'Hook', title:'Hook 쓰임', type:'cards', cols:4, cards:[
-  {t:'판정 · 차단', c:'rm -rf · .env 편집 막기\nStop에서 테스트 확인', key:1},
-  {t:'알림', c:'입력이 필요할 때\n데스크톱 알림'},
-  {t:'자동 포맷', c:'파일 편집 뒤\nPrettier 실행'},
-  {t:'context 주입', c:'compaction 뒤 중요한\ncontext 다시 넣기'},
-  {t:'로그 · 감사', c:'실행한 명령 · 설정 변경\nskill 사용 기록'},
-  {t:'외부 연동', c:'이슈 트래커 폼 자동 입력\n공유 skill 저장소 갱신'},
-  {t:'세션 관리', c:'종료할 때 상태 저장\ncompaction 요약 지시'},
-  {t:'비용 표시', c:'대화 재개 비용\n토큰 수 확인'}],
-  note:'판정은 일부: Claude Code 공식 예시 약 40개 중 판정 · 검증은 5~6개',
-  src:'Claude Code hooks 문서 · 시작은 권한 확인 알림 요청 (Cat Wu 인터뷰)'},
-{sec:'Hook', title:'Hook 판정 구조', type:'table',
-  corner:'판정 지점 · 판정자',
-  cols:['규칙 (결정적)','모델 (확률적)','사람'],
-  rows:[
-    {h:'실행 전\n행동 판정 · Control', cells:['permission 규칙 (deny → ask → allow)\nPreToolUse hook','auto mode classifier\nPreToolUse prompt hook','PermissionRequest\n승인 (HITL)']},
-    {h:'멈추기 전\n결과 판정 · Verification', cells:['테스트 · 린트, CI\nStop hook','/goal 판정 (prompt Stop hook)\nverifier sub-agent · agent hook','코드 리뷰 · 승인']}],
-  foot:'판정 모델을 붙이는 방법: 내장 단계 (auto mode classifier) · hook (prompt · agent hook, /goal) · sub-agent 호출 (verifier)',
-  note:'루프의 정해진 지점에서 규칙, 모델, 사람이 통과 · 차단 · 계속을 정함 (넓은 뜻의 hook)',
-  src:'Claude Code 문서: hooks, permission modes, /goal'},
+{sec:'Hook', title:'Hook 개념', type:'canvas', h:340,
+  boxes:[{id:'uses',x:20,y:190,w:1080,h:130,label:'Hook이 하는 일'}],
+  nodes:[{id:'prev',x:40,y:30,w:280,h:72,t:'이전 단계',cls:'big'},
+    {id:'hook',x:420,y:30,w:280,h:72,t:'Hook',c:'두 단계 사이에서 자동 실행',key:1,cls:'big'},
+    {id:'next',x:800,y:30,w:280,h:72,t:'다음 단계',cls:'big'},
+    {id:'u1',x:41,y:236,w:190,h:60,t:'context 가공',cls:'mid'},{id:'u2',x:253,y:236,w:190,h:60,t:'permission · HITL',cls:'mid'},
+    {id:'u3',x:465,y:236,w:190,h:60,t:'검증 · 계속 강제',cls:'mid'},{id:'u4',x:677,y:236,w:190,h:60,t:'metadata 추출',cls:'mid'},
+    {id:'u5',x:889,y:236,w:190,h:60,t:'자동화 등',cls:'mid'}],
+  edges:[['prev','r','hook','l'],['hook','r','next','l'],['hook','b','uses','t',{dash:1}]],
+  note:'루프의 두 단계 사이에 끼워 넣어 자동으로 실행하는 코드',
+  src:'Claude Code hooks 문서'},
+{sec:'Hook', title:'Hook 위치', type:'canvas', h:410,
+  nodes:[{id:'llm',x:440,y:10,w:240,h:60,t:'LLM 호출',cls:'big'},
+    {id:'loop',x:440,y:170,w:240,h:70,t:'Agent loop',cls:'big'},
+    {id:'tool',x:440,y:340,w:240,h:60,t:'Tool 호출',cls:'big'},
+    {id:'in',x:20,y:175,w:180,h:60,t:'사용자 입력',cls:'big'},
+    {id:'out',x:920,y:175,w:180,h:60,t:'답변',cls:'big'},
+    {id:'h1',x:257,y:179,w:126,h:52,t:'Hook',c:'턴 시작',key:1,cls:'hk'},
+    {id:'h2',x:407,y:94,w:126,h:52,t:'Hook',c:'LLM 호출 전',key:1,cls:'hk'},
+    {id:'h3',x:587,y:94,w:126,h:52,t:'Hook',c:'LLM 호출 후',key:1,cls:'hk'},
+    {id:'h4',x:407,y:264,w:126,h:52,t:'Hook',c:'도구 호출 전',key:1,cls:'hk'},
+    {id:'h5',x:587,y:264,w:126,h:52,t:'Hook',c:'도구 호출 후',key:1,cls:'hk'},
+    {id:'h6',x:737,y:179,w:126,h:52,t:'Hook',c:'멈추기 전',key:1,cls:'hk'}],
+  edges:[['in','r','loop','l'],['loop','r','out','l'],
+    ['loop','t@0.125','llm','b@0.125'],['llm','b@0.875','loop','t@0.875'],
+    ['loop','b@0.125','tool','t@0.125'],['tool','t@0.875','loop','b@0.875']],
+  note:'Agent loop가 LLM 호출과 Tool 호출을 오가는 모든 화살표에 hook을 끼울 수 있음',
+  src:'LLM 호출 전후 hook은 Claude Code를 뺀 5개 하니스에 있음(Claude Code는 mods로) · 나머지 지점은 6개 모두'},
+{sec:'Hook', title:'Hook 쓰임', type:'cards', rows:[3,2], cards:[
+  {t:'Context', c:'턴 시작에 브랜치 상태 주입\ncompaction 뒤 중요한 지시 다시 넣기', key:1},
+  {t:'통제', c:'rm -rf · .env 편집 차단 (/careful)\n배포 같은 단계는 사람 승인 (HITL)', key:1},
+  {t:'검증', c:'/goal: 목표를 이룰 때까지 계속\n테스트가 실패하면 완료 차단'},
+  {t:'유틸리티', c:'명령 · 설정 변경 감사 로그\n비용 · 토큰 기록, 입력 대기 알림'},
+  {t:'자동화', c:'편집 뒤 Prettier · lint 실행\n세션 시작에 공유 skill 저장소 갱신'}],
+  note:'위 셋은 신뢰도(Context engineering · Controls · Verification), 아래 둘은 편의와 운영을 돕는 쓰임',
+  src:'Claude Code hooks 문서 · Shihipar 2026 (/careful) · AI-Native SDLC Playbook (승인 게이트)'},
+{sec:'Hook', title:'Hook 사례: Context engineering', type:'cards', cols:2, cards:[
+  {t:'State', c:'턴마다 task 진척 · 브랜치 상태를 넣음\nClaude Code UserPromptSubmit · opencode goal · plan 알림', key:1},
+  {t:'Context 가공', c:'LLM 호출 직전에 조립된 messages를 수정\nPi context · OpenClaw before_prompt_build'},
+  {t:'Tool result 변환', c:'도구 출력을 context에 넣기 전에 줄이거나 바꿈\nCodex PostToolUse · Hermes transform_tool_result'},
+  {t:'Compaction', c:'요약 지시를 주고, 끝난 뒤 중요한 내용을 다시 넣음\nClaude Code PreCompact · SessionStart'}],
+  note:'context가 만들어지는 지점마다 hook으로 넣고, 고치고, 보완함 (⟨Context engineering 구현⟩쪽)',
+  src:'Claude Code hooks 문서 · Codex, Hermes, Pi, OpenClaw, opencode 코드'},
 {sec:'Hook · Controls', title:'Controls 개념', type:'hub', leftStyle:'dash', legend:[['dash','원인'],['solid','대응']],
-  left:[{t:'비결정성', c:'같은 입력에도 다른 행동'}],
+  left:[{t:'비결정론적 동작', c:'같은 입력에도 다른 행동', prob:1}],
   center:{t:'Controls'},
   right:[{t:'Permission 규칙', c:'allow · ask · deny'},{t:'Hook', c:'정해진 시점에 검사 · 차단'},{t:'Sandbox', c:'실행 환경 격리'}],
   note:'모델 판단에 맡기지 않고 정해진 규칙으로 동작을 통과 · 차단'},
+{sec:'Hook · Controls', title:'Hook 사례: Control', type:'cards', cols:2, cards:[
+  {t:'위험 명령 차단', c:'rm -rf · DROP TABLE · force-push 막기\nPreToolUse hook (Anthropic /careful)', key:1},
+  {t:'편집 범위 제한', c:'.env · .git/ 편집 막기\n지정 폴더 밖 편집 막기 (/freeze)'},
+  {t:'작업 규칙 강제', c:'버그 수정 중 테스트 파일 편집 막기\n티켓 번호 형식 강제'},
+  {t:'사람 승인', c:'배포 단계에서 승인 받기 (승인 게이트)\nPermissionRequest hook'}],
+  note:'실행 전에 hook이 막거나 승인을 받음:\n꼭 지킬 규칙은 instruction이 아니라 hook으로 강제',
+  src:'Claude Code hooks 문서 · Shihipar 2026 (/careful, /freeze) · AI-Native SDLC Playbook ("skills are advisory only")'},
 {sec:'Controls · Sandbox', title:'Sandbox 필요성', type:'hub', leftStyle:'dash', legend:[['dash','사고 사례']],
   left:[{t:'운영 DB 삭제', c:'Replit 에이전트 사례'},{t:'이메일 200통 이상 삭제', c:'compaction이 "실행하지 말 것"을 누락'}],
   center:{t:'Sandbox'},
@@ -630,15 +727,15 @@ const S = [
   {t:'남은 작업', c:'실패 3개'}],
   note:'작업이 남았는데 끝났다고 판단하고 멈춤 (Stops before the task is done)', src:'예시'},
 {sec:'Hook · Verification', title:'Goal loop 구현', type:'hub',
-  left:[{t:'조기 종료'}],
+  left:[{t:'조기 종료', prob:1}],
   center:{t:'Goal loop', c:'목표를 이룰 때까지 다시 돌림'},
   right:[{t:'Stop hook', c:'종료를 막고 계속'},{t:'Planning · Tasks', c:'남은 단계 확인'},{t:'목표 조건 판정', c:'매 턴 끝에 작은 모델이 판정'},{t:'Ralph loop · /goal', c:'2025-07 Ralph → 2026 제품별 /goal'}],
-  note:'Claude Code의 /goal은 Stop hook을 감싼 것: 매 턴 끝에 조건을 판정해 이룰 때까지 계속',
+  note:'매 턴 끝에 조건을 판정해 이룰 때까지 계속',
   src:'Huntley 2025-07 (Ralph) · /goal: Codex, Hermes, Claude Code, OpenClaw, opencode (2026)'},
 {sec:'Hook · Verification', title:'Verifier 검증 루프', type:'loop',
   nodes:[{t:'Explore', c:'gather context'},{t:'Plan', c:'계획'},{t:'Act', c:'take action'},{t:'Verify', c:'verify results', key:1}],
   center:{t:'Plan-Execute-Verify'},
-  note:'별도 verifier가 새 context에서 결과를 확인하고, 실패하면 다시 계획',
+  note:'verifier agent가 새 context에서 결과를 판단하고, 실패하면 다시 계획',
   src:'Claude Code 문서 (gather context, take action, verify results) · Ning 2026 (PEV loop) · Zhang 2026 (새 context의 critic)'},
 
 {sec:'General-Purpose AI Agent', title:'General-Purpose AI Agent 구조', type:'canvas', h:392, legend:[['dash','실행 순서가 아닌 관계']],
@@ -651,30 +748,94 @@ const S = [
     {id:'sk',x:0,y:92,w:210,h:56,t:'skills · 장기 memory'},{id:'ss',x:0,y:180,w:210,h:56,t:'세션 저장 (transcript)'},{id:'sa',x:0,y:330,w:210,h:56,t:'sub-agent (같은 루프)'}],
   edges:[['n1','r','n2','l'],['n2','r','nm','l'],['nm','b','n3','t',{label:'도구 호출 있음'}],['n3','l','n4','r'],['n4','l','n5','r'],['n5','t','n1','b',{label:'계속'}],
     ['nm','r','n6','t',{label:'도구 호출 없음'}],['sk','r','n1','l',{dash:1}],['loop','l','ss','r',{dash:1}],['n4','b','sa','r',{dash:1}]],
-  note:'지금까지의 구현요소가 한 턴의 흐름 안에 모임', src:'에이전트 구성요소 매트릭스 보드의 구현요소 흐름'},
+  note:'context 조립부터 검증까지 한 루프로 묶어 목표를 이룰 때까지 도는 에이전트', src:'에이전트 구성요소 매트릭스 보드의 구현요소 흐름'},
 {sec:'General-Purpose AI Agent', title:'General-Purpose AI Agent 사례', type:'cards', cols:2, cards:[
   {t:'개발', c:'코드 작성 · 테스트 · PR\n예: Claude Code, Codex CLI, Cursor'},
   {t:'그래픽 · 디자인', c:'브리프로 웹사이트 제작\nBlender · CAD · SVG 작업'},
   {t:'데이터 분석', c:'데이터 탐색 · 분석 · 보고\n예: agentic data scientist'},
   {t:'연구', c:'자료 조사 · 실험 자동화\n예: Deep Research 에이전트'}],
-  note:'같은 루프와 도구 구성으로 여러 분야의 작업을 수행',
+  note:'같은 에이전트지만 도구와 skill, hook을 통해 다양한 작업에 응용',
   src:'Frontier Design Benchmark (2026), 그래픽스 에이전트 서베이, AutoData 등'},
 
-{sec:'Evaluation', title:'Evaluation 방법론', type:'cards', cols:3, cards:[
-  {t:'실제 과제 eval 세트', c:'최근 실제 과제 20~50개', key:1},
-  {t:'CI에서 다시 실행', c:'CLAUDE.md · 스킬 · 훅이 바뀔 때'},
-  {t:'통과율 게이트', c:'머지 검사로 강제'},
-  {t:'인시던트 → eval', c:'사고를 영구 테스트로'},
-  {t:'결과 기록', c:'시간에 따라 비교'}],
-  note:'하니스 설정이 바뀔 때마다 실제 과제로 다시 재고 통과율로 막음',
-  src:'Anthropic, AI-Native SDLC Playbook (2026), 요약'},
 {sec:'Evaluation', title:'Evaluation 확장', type:'flow', steps:[
   {t:'명확한 사용 사례', c:'자주 하는 실제 작업', key:1},
   {t:'작은 eval 세트', c:'실제 과제 · 실패 사례'},
   {t:'측정', c:'통과율 · 실패 유형'},
   {t:'확장', c:'사례와 세트를 넓힘'}],
   note:'명확한 사용 사례에서 시작해 측정이 뒷받침할 때 범위를 넓힘',
-  src:'Anthropic, Building Effective AI Agents (2025) · Demystifying evals (2026)'}
+  src:'Anthropic, Building Effective AI Agents (2025) · Demystifying evals (2026)'},
+{sec:'정리', title:'AI Agent Overview', type:'canvas', h:534, zoom:1.08, nofoot:1,
+  texts:[{x:0,y:548,t:'실행 순서가 아닌 관계',cls:'lgd'}],
+  boxes:[{id:'llmb',x:320,y:0,w:192,h:82,sm:1,label:'Large Language Model'},
+    {id:'etb',x:540,y:11,w:100,h:60,sm:1,label:'External Tools'},
+    {id:'env',x:668,y:0,w:340,h:82,sm:1,label:'Tool Exec. Env.'},
+    {id:'ag',x:170,y:91,w:645,h:441,sm:1,label:'AI Agent'},
+    {id:'itb',x:612,y:104,w:192,h:82,sm:1,label:'Internal Tools'},
+    {id:'ctl',x:196,y:203,w:608,h:71,sm:1,label:'Controls'},
+    {id:'lp',x:346,y:289,w:316,h:147,sm:1,label:'Agent Loop'},
+    {id:'ce',x:190,y:447,w:192,h:82,sm:1,label:'Context engineering'},
+    {id:'ev',x:918,y:361,w:192,h:82,sm:1,label:'Evaluation'},
+    {id:'ap',x:918,y:454,w:192,h:80,sm:1,label:'활용 사례'}],
+  nodes:[{id:'l1',x:324,y:28,w:84,h:22,t:'Reasoning',cls:'sm'},
+    {id:'l2',x:416,y:28,w:92,h:22,t:'Planning',cls:'sm'},
+    {id:'l3',x:324,y:54,w:84,h:22,t:'Decision',cls:'sm'},
+    {id:'l4',x:416,y:54,w:92,h:22,t:'Summarization',cls:'sm'},
+    {id:'x1',x:548,y:39,w:84,h:22,t:'MCP',cls:'sm'},
+    {id:'v1',x:676,y:28,w:84,h:22,t:'Sandbox',cls:'sm'},
+    {id:'v2',x:768,y:28,w:84,h:22,t:'DB',cls:'sm'},
+    {id:'v3',x:676,y:54,w:84,h:22,t:'API',cls:'sm'},
+    {id:'v4',x:768,y:54,w:84,h:22,t:'Devices',cls:'sm'},
+    {id:'emem',x:868,y:11,w:128,h:63,t:'External\nMemory',cls:'sm db',bg:'#CFC9BE'},
+    {id:'i1',x:620,y:132,w:84,h:22,t:'Bash',cls:'sm'},
+    {id:'i2',x:712,y:132,w:84,h:22,t:'Agent Skills',cls:'sm'},
+    {id:'i3',x:620,y:158,w:84,h:22,t:'Functions',cls:'sm'},
+    {id:'i4',x:712,y:158,w:84,h:22,t:'Sub-Agents',cls:'sm'},
+    {id:'mh',x:410,y:213,w:80,h:54,t:'Model\nHook',cls:'sm rc',bg:'#F6CDB9'},
+    {id:'th',x:550,y:213,w:80,h:54,t:'Tool\nHook',cls:'sm rc',bg:'#F6CDB9'},
+    {id:'sh',x:716,y:213,w:80,h:54,t:'Stop\nHook',cls:'sm rc',bg:'#F6CDB9'},
+    {id:'c1',x:206,y:224,w:102,h:22,t:'Permission',cls:'sm'},
+    {id:'c2',x:314,y:224,w:84,h:22,t:'Verification',cls:'sm'},
+    {id:'c3',x:206,y:249,w:102,h:22,t:'Context Control',cls:'sm'},
+    {id:'c4',x:314,y:249,w:84,h:22,t:'Goal loop',cls:'sm'},
+    {id:'tc',x:530,y:298,w:120,h:32,t:'Tool 호출',cls:'sm rc',bg:'#F6CDB9'},
+    {id:'dn',x:545,y:352,w:90,h:76,t:'완료',cls:'sm dia',bg:'#FFFFFF'},
+    {id:'lc',x:356,y:374,w:120,h:32,t:'LLM 호출',cls:'sm rc',bg:'#F6CDB9'},
+    {id:'cb',x:180,y:374,w:120,h:32,t:'Context 구성',cls:'sm rc',bg:'#F6CDB9'},
+    {id:'ui',x:0,y:357,w:80,h:65,t:'사용자\n입력',cls:'sm ov',bg:'#D9D7CF'},
+    {id:'fr',x:886,y:289,w:84,h:56,t:'최종 응답',cls:'sm ov',bg:'#D9D7CF'},
+    {id:'e1',x:198,y:475,w:84,h:22,t:'Tools/Skills',cls:'sm'},
+    {id:'e2',x:290,y:475,w:84,h:22,t:'Trajectory',cls:'sm'},
+    {id:'e3',x:198,y:501,w:84,h:22,t:'States',cls:'sm'},
+    {id:'e4',x:290,y:501,w:84,h:22,t:'Compaction',cls:'sm'},
+    {id:'tr',x:460,y:460,w:120,h:52,t:'Transcript',cls:'sm db',bg:'#CFC9BE'},
+    {id:'q1',x:926,y:389,w:84,h:22,t:'Eval Set',cls:'sm'},
+    {id:'q2',x:1018,y:389,w:84,h:22,t:'Grader',cls:'sm'},
+    {id:'q3',x:926,y:415,w:84,h:22,t:'Metrics',cls:'sm'},
+    {id:'q4',x:1018,y:415,w:84,h:22,t:'CI Regression',cls:'sm'},
+    {id:'a1',x:926,y:480,w:84,h:22,t:'개발',cls:'sm'},
+    {id:'a2',x:1018,y:480,w:84,h:22,t:'디자인',cls:'sm'},
+    {id:'a3',x:926,y:505,w:84,h:22,t:'데이터 분석',cls:'sm'},
+    {id:'a4',x:1018,y:505,w:84,h:22,t:'연구',cls:'sm'}],
+  edges:[['ui','r','cb','l'],
+    ['ce','t','cb','b',{dash:1}],
+    ['cb','r','lc','l'],
+    ['lc','r','dn','l'],
+    ['dn','t','tc','b',{sm:1,label:'NO'}],
+    ['dn','r','sh','b',{sm:1,label:'YES'}],
+    ['sh','b@0.8','fr','l'],
+    ['sh','t','cb','t@0.05',{out:17}],
+    ['tc','t','th','b',{both:1}],
+    ['tc','l','lc','t@0.95'],
+    ['lc','t@0.78','mh','b',{both:1}],
+    ['mh','t','llmb','b@0.677',{both:1}],
+    ['th','r','itb','b',{both:1}],
+    ['th','t','etb','b',{both:1}],
+    ['etb','r','env','l',{both:1}],
+    ['ag','r@0.66','ev','l@0.29',{sm:1,label:'Eval.'}],
+    ['ev','l@0.71','ag','r@0.74',{sm:1,label:'Feedback'}],
+    ['ag','r@0.9','ap','l@0.43',{dash:1}],
+    ['lp','b@0.53','tr','t',{dash:1}],
+    ['tr','l','ce','r',{dash:1}]]}
 ];
 
 /* ---------- 쪽 번호 ---------- */
@@ -694,14 +855,13 @@ const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>
 const br = s => esc(s).replace(/\n/g,'<br>');
 const hl = s => esc(s).replace(/⟦(.*?)⟧/g,'<span class="k">$1</span>').replace(/⟪(.*?)⟫/g,'<span class="m">$1</span>');
 const pill = (d, cls='', style='') =>
-  `<div class="pill${d.key?' key':''}${cls?' '+cls:''}"${style?` style="${style}"`:''}><div class="t">${br(d.t)}</div>${d.c?`<div class="c">${br(d.c)}</div>`:''}</div>`;
+  `<div class="pill${d.key?' key':''}${d.prob?' prob':''}${cls?' '+cls:''}"${style?` style="${style}"`:''}><div class="t">${br(d.t)}</div>${d.c?`<div class="c">${br(d.c)}</div>`:''}</div>`;
 const arrow = (dash, cls='', plain=false) => `<div class="arr${dash?' dash':''}${cls?' '+cls:''}"><b></b>${plain?'':'<i class="hd"></i>'}</div>`;
 
 function hub(s){
   const L=s.left||[], R=s.right||[], n=Math.max(L.length,R.length,1);
   const ph = n>=4 ? 70 : 76, gap = n>=4 ? 16 : 18;
-  /* rgroup: 오른쪽이 가운데 노드 안의 단계일 때. 단계를 상자 하나로 묶고, 가운데에서 상자로 가는 화살표는 하나만 둡니다 */
-  const VG = 30, PAD = 20;
+  /* rgroup: 오른쪽이 가운데 노드 안의 단계일 때. 단계를 상자 하나로 묶고, 가운데에서 상자로 가는 화살표는 하나만 둡니다 */  const VG = 30, PAD = 20;
   const H = s.rgroup ? Math.max(L.length*ph+(L.length-1)*gap, R.length*ph+(R.length-1)*VG+2*PAD) : n*ph+(n-1)*gap;
   let h=`<div class="hub" style="height:${H}px;--ph:${ph}px;--gap:${gap}px">`;
   if(L.length) h+=`<div class="col">${s.lcap?`<div class="ccap">${esc(s.lcap)}</div>`:''}${L.map(d=>pill(d)).join('')}</div>`+
@@ -713,7 +873,7 @@ function hub(s){
   else if(R.length) h+=`<div class="arrows${L.length?'':' fixed'}">${R.map(()=>arrow(s.rightStyle==='dash')).join('')}</div>`+
     `<div class="col">${s.rcap?`<div class="ccap">${esc(s.rcap)}</div>`:''}${R.map(d=>pill(d)).join('')}</div>`;
   h+='</div>';
-  if(s.chips) h=`<div class="stackv">${h}<div class="chips">${esc(s.chips.label)}: ${s.chips.items.map(t=>`<span>${esc(t)}</span>`).join('')}</div></div>`;
+  if(s.chips) h=`<div class="stackv">${h}<div class="chips"><div>${esc(s.chips.label)}:</div><div class="crow">${s.chips.items.map(t=>`<span>${esc(t)}</span>`).join('')}</div></div></div>`;
   return h;
 }
 function flow(s, steps=s.steps){
@@ -739,13 +899,23 @@ function table(s){
   const cg = s.widths ? `<colgroup><col style="width:250px">${s.widths.map(w=>`<col style="width:${w}">`).join('')}</colgroup>` : '';
   return `<div class="tblwrap"><table class="jt${s.compact?' compact':''}">${cg}${head}${rows}</table>${s.foot?`<div class="tfoot2">${br(s.foot)}</div>`:''}</div>`;
 }
-function cards(s){ return `<div class="cards" style="grid-template-columns:repeat(${s.cols||3},1fr)">${s.cards.map(d=>`<div class="card${d.key?' key':''}"><div class="t">${br(d.t)}</div>${d.c?`<div class="c">${br(d.c)}</div>`:''}</div>`).join('')}</div>`; }
+function cards(s){
+  const card=(d,w)=>`<div class="card${d.key?' key':''}"${w?` style="width:${w}"`:''}><div class="t">${br(d.t)}</div>${d.c?`<div class="c">${br(d.c)}</div>`:''}</div>`;
+  /* rows: 줄마다 카드 수를 정하고 가운데에 맞춤(예: [3, 2]). 카드 폭은 가장 많은 줄에 맞춰 같게 둠 */
+  if(s.rows){
+    const n=Math.max(...s.rows), w=`calc((100% - ${(n-1)*20}px) / ${n})`; let i=0;
+    return `<div class="cardrows">${s.rows.map(k=>`<div class="cardrow">${s.cards.slice(i,i+=k).map(d=>card(d,w)).join('')}</div>`).join('')}</div>`;
+  }
+  return `<div class="cards" style="grid-template-columns:repeat(${s.cols||3},1fr)">${s.cards.map(d=>card(d)).join('')}</div>`;
+}
 /* wrap: 긴 줄을 상자 안에서 접어 보입니다(접힌 줄은 2칸 들여 원래 줄과 구분). 빈 줄은 반 줄 높이로 */
 const codeBlock = (label, code, fs, wrap, cls='') => `<div class="cblk${cls?' '+cls:''}">${label?`<div class="lab">${esc(label)}</div>`:''}${wrap
   ? `<div class="code wrap"${fs?` style="font-size:${fs}px"`:''}>${code.split('\n').map(l=>l?`<div class="ln">${hl(l)}</div>`:'<div class="ln gap"></div>').join('')}</div>`
   : `<pre class="code"${fs?` style="font-size:${fs}px"`:''}>${hl(code)}</pre>`}</div>`;
 const aside = list => list ? `<div class="aside">${list.map(d=>pill(d)).join('')}</div>` : '';
 function code(s){ return `<div class="cwrap">${codeBlock(s.label,s.code,s.fs,s.wrap,s.wrap?'grow':'')}${aside(s.aside)}</div>`; }
+/* 나란히 비교: 열마다 알약 하나와 코드 블록 하나 */
+function duo(s){ return `<div class="duo">${s.cols.map(c=>`<div class="dcol">${pill(c)}${codeBlock('',c.code,s.fs||18)}${c.foot?`<div class="dfoot">${br(c.foot)}</div>`:''}</div>`).join('')}</div>`; }
 function code2(s){
   const [a,b]=s.blocks, fs=s.fs||18;
   /* 접는 블록은 남는 너비를 채우고, 다른 블록은 제 너비를 지킵니다 */
@@ -783,23 +953,27 @@ function layers(s){
 function equation(s){
   const it=s.items.map(d=>typeof d==='string'?{t:d}:d);
   const row=it.map((d,i)=>(i?`<span class="op${d.dim?' dim':''}">+</span>`:'')+pill({t:d.t},d.dim?'dim':'')).join('');
-  return `<div class="eq"><div class="eqrow">${row}</div><div class="eqrow"><span class="op">=</span>${pill({t:s.result,key:1},'big')}</div></div>`;
+  /* ex: 식 아래 사례 알약(alt는 점선 테두리로 참고 사례 표시) */
+  const ex=s.ex?`<div class="eqex">${s.ex.map(d=>pill(d,d.alt?'alt':'')).join('')}</div>`:'';
+  return `<div class="eq"><div class="eqrow">${row}</div><div class="eqrow"><span class="op">=</span>${pill({t:s.result,key:1},'big')}</div>${ex}</div>`;
 }
 
 /* 캔버스: 노드 좌표를 정해 두고 화살표는 꺾은선으로 잇습니다 */
+/* 변 이름 뒤에 '@비율'을 붙이면(예: 't@0.125') 변의 가운데 대신 그 비율 위치에서 선이 나갑니다. 한 변에서 선을 여럿 낼 때 씁니다 */
 function sidePt(n, s){
-  if(s==='l') return [n.x, n.y+n.h/2];
-  if(s==='r') return [n.x+n.w, n.y+n.h/2];
-  if(s==='t') return [n.x+n.w/2, n.y];
-  return [n.x+n.w/2, n.y+n.h];
+  const [d,f]=s.split('@'), k=f===undefined?0.5:+f;
+  if(d==='l') return [n.x, n.y+n.h*k];
+  if(d==='r') return [n.x+n.w, n.y+n.h*k];
+  if(d==='t') return [n.x+n.w*k, n.y];
+  return [n.x+n.w*k, n.y+n.h];
 }
 function route(a, fs, b, ts, out=34){
-  const p=sidePt(a,fs), q=sidePt(b,ts), H=s=>s==='l'||s==='r', pts=[p];
+  const p=sidePt(a,fs), q=sidePt(b,ts), H=s=>s[0]==='l'||s[0]==='r', pts=[p];
   if(H(fs)&&H(ts)){
-    if(fs===ts){ const x = fs==='r' ? Math.max(p[0],q[0])+out : Math.min(p[0],q[0])-out; pts.push([x,p[1]],[x,q[1]]); }
+    if(fs[0]===ts[0]){ const x = fs[0]==='r' ? Math.max(p[0],q[0])+out : Math.min(p[0],q[0])-out; pts.push([x,p[1]],[x,q[1]]); }
     else if(Math.abs(p[1]-q[1])>1){ const mx=(p[0]+q[0])/2; pts.push([mx,p[1]],[mx,q[1]]); }
   } else if(!H(fs)&&!H(ts)){
-    if(fs===ts){ const y = fs==='b' ? Math.max(p[1],q[1])+out : Math.min(p[1],q[1])-out; pts.push([p[0],y],[q[0],y]); }
+    if(fs[0]===ts[0]){ const y = fs[0]==='b' ? Math.max(p[1],q[1])+out : Math.min(p[1],q[1])-out; pts.push([p[0],y],[q[0],y]); }
     else if(Math.abs(p[0]-q[0])>1){ const my=(p[1]+q[1])/2; pts.push([p[0],my],[q[0],my]); }
   } else if(H(fs)) pts.push([q[0],p[1]]);
   else pts.push([p[0],q[1]]);
@@ -817,8 +991,8 @@ function labelAt(pts){
 function canvas(s){
   const W=1120, H=s.h||380, all={};
   (s.nodes||[]).forEach(n=>all[n.id]=n); (s.boxes||[]).forEach(b=>all[b.id]=b);
-  let h=`<div class="cv" style="height:${H}px">`;
-  (s.boxes||[]).forEach(b=>{ h+=`<div class="cbox${b.sub?' sub':''}" style="left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px"><span>${esc(b.label)}</span></div>`; });
+  let h=`<div class="cv" style="height:${H}px${s.zoom?`;zoom:${s.zoom}`:''}">`;
+  (s.boxes||[]).forEach(b=>{ h+=`<div class="cbox${b.sub?' sub':''}${b.sm?' sm':''}" style="left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px"><span>${esc(b.label)}</span></div>`; });
   let svg=`<svg class="cvs" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">`, labels='';
   (s.edges||[]).forEach(([a,fs,b,ts,o={}])=>{
     const pts=route(all[a],fs,all[b],ts,o.out);
@@ -826,7 +1000,7 @@ function canvas(s){
     if(o.label){ const [x,y]=labelAt(pts); labels+=`<text x="${x.toFixed(1)}" y="${(y+5).toFixed(1)}" class="el">${esc(o.label)}</text>`; }
   });
   h+=svg+labels+'</svg>';
-  (s.nodes||[]).forEach(n=>{ h+=`<div class="pill cnode${n.key?' key':''}" style="left:${n.x}px;top:${n.y}px;width:${n.w}px;height:${n.h}px"><div class="t">${br(n.t)}</div>${n.c?`<div class="c">${br(n.c)}</div>`:''}</div>`; });
+  (s.nodes||[]).forEach(n=>{ h+=`<div class="pill cnode${n.key?' key':''}${n.cls?' '+n.cls:''}" style="left:${n.x}px;top:${n.y}px;width:${n.w}px;height:${n.h}px${n.bg?`;background:${n.bg};--fill:${n.bg}`:''}"><div class="t">${br(n.t)}</div>${n.c?`<div class="c">${br(n.c)}</div>`:''}</div>`; });
   (s.texts||[]).forEach(t=>{ h+=`<div class="ctext ${t.cls||''}" style="left:${t.x}px;top:${t.y}px">${esc(t.t)}</div>`; });
   return h+'</div>';
 }
@@ -836,8 +1010,13 @@ function loop(s){
   const W=1120, H=400, cx=560, cy=210, rx=330, ry=130, n=s.nodes.length, ty=cy-ry;
   const ang=i=>-Math.PI/2+i*2*Math.PI/n;
   let svg=`<svg class="cvs" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true"><ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" class="track"/>`;
+  /* hooks: 포인트 색으로 끼워 넣는 작은 노드. at은 'entry'·'exit'(들어오고 나가는 선 위) 또는 i(노드 i와 i+1 사이 궤도 위).
+     hook이 있는 구간의 방향 표시는 hook 노드에 가리지 않게 궤도를 따라 86px 옮기고, 위쪽 선과 겹치지 않게 아래쪽을 고릅니다 */
+  const hk=s.hooks||[], pt=m=>[cx+rx*Math.cos(m), cy+ry*Math.sin(m)];
   for(let i=0;i<n;i++){
-    const m=ang(i)+Math.PI/n, hx=cx+rx*Math.cos(m), hy=cy+ry*Math.sin(m);
+    let m=ang(i)+Math.PI/n;
+    if(hk.some(k=>k.at===i)){ const d=86/Math.hypot(rx*Math.sin(m), ry*Math.cos(m)); m = pt(m+d)[1] >= pt(m-d)[1] ? m+d : m-d; }
+    const hx=cx+rx*Math.cos(m), hy=cy+ry*Math.sin(m);
     const deg=Math.atan2(ry*Math.cos(m), -rx*Math.sin(m))*180/Math.PI;
     svg+=`<path d="M-10,-8 L10,0 L-10,8 z" class="lh" transform="translate(${hx.toFixed(1)} ${hy.toFixed(1)}) rotate(${deg.toFixed(1)})"/>`;
   }
@@ -847,9 +1026,13 @@ function loop(s){
   const ap=(d,x,y,w)=>`<div class="pill ap${d.key?' key':''}" style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px;${w?`width:${w}px`:''}"><div class="t">${br(d.t)}</div>${d.c?`<div class="c">${br(d.c)}</div>`:''}</div>`;
   let h=`<div class="lp" style="height:${H}px">${svg}`;
   s.nodes.forEach((d,i)=>{ const a=ang(i); h+=ap(d, cx+rx*Math.cos(a), cy+ry*Math.sin(a), 230); });
-  if(s.center) h+=ap({...s.center,key:1}, cx, cy);
+  if(s.center) h+=ap({key:1,...s.center}, cx, cy);
   if(s.entry) h+=ap(s.entry, 103, ty, 200);
   if(s.exit) h+=ap(s.exit, W-103, ty, 200);
+  hk.forEach(k=>{
+    const [x,y] = k.at==='entry' ? [(206+cx-117)/2, ty] : k.at==='exit' ? [(cx+117+W-206)/2, ty] : pt(ang(k.at)+Math.PI/n);
+    h+=`<div class="pill ap hk key" style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px"><div class="t">${br(k.t)}</div>${k.c?`<div class="c">${br(k.c)}</div>`:''}</div>`;
+  });
   return h+'</div>';
 }
 
@@ -858,27 +1041,39 @@ function seq(s){
   const side=s.side, W=side?720:900, x1=side?120:170, x2=side?600:730, top=86, step=40, H=top+(s.msgs.length-1)*step+24;
   let svg=`<svg class="cvs" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">`+
     `<line x1="${x1}" y1="50" x2="${x1}" y2="${H}" class="life"/><line x1="${x2}" y1="50" x2="${x2}" y2="${H}" class="life"/>`;
-  s.msgs.forEach(([d,m,txt],i)=>{
+  /* 메시지 넷째 값 {key:1}: 그 메시지를 포인트 색으로 강조. 강조가 있으면 서버 머리 노드는 칠하지 않습니다(포인트는 한 곳) */
+  const hk=s.msgs.some(m=>m[3]&&m[3].key);
+  s.msgs.forEach(([d,m,txt,o={}],i)=>{
     const y=top+i*step, a=d==='>'?x1:x2, b=d==='>'?x2:x1;
-    svg+=`<line x1="${a}" y1="${y}" x2="${b + (d==='>'?-2:2)}" y2="${y}" class="${d==='<'?'ret':''}" marker-end="url(#ah)"/>`;
-    svg+=`<text x="${(x1+x2)/2}" y="${y-9}" class="ml">${esc(m)}${txt?`<tspan class="md">  ${esc(txt)}</tspan>`:''}</text>`;
+    svg+=`<line x1="${a}" y1="${y}" x2="${b + (d==='>'?-2:2)}" y2="${y}" class="${d==='<'?'ret':''}${o.key?' key':''}" marker-end="url(#${o.key?'ahk':'ah'})"/>`;
+    svg+=`<text x="${(x1+x2)/2}" y="${y-9}" class="ml${o.key?' key':''}">${esc(m)}${txt?`<tspan class="md">  ${esc(txt)}</tspan>`:''}</text>`;
   });
   svg+='</svg>';
-  const sq=`<div class="sq" style="width:${W}px;height:${H}px">${svg}${pill({t:s.a},'head','left:'+x1+'px')}${pill({t:s.b,key:1},'head','left:'+x2+'px')}</div>`;
+  const sq=`<div class="sq" style="width:${W}px;height:${H}px">${svg}${pill({t:s.a},'head','left:'+x1+'px')}${pill({t:s.b,key:hk?0:1},'head','left:'+x2+'px')}</div>`;
   if(!side) return sq;
   return `<div class="cwrap" style="justify-content:center;gap:40px">${sq}<div style="width:330px;flex:none">${cards({cards:side,cols:1})}</div></div>`;
 }
 
 /* Transformer 블록 */
+/* key: 포인트 색으로 칠할 노드(attn: Self-attention, pe: Positional encoding), grid:0이면 n×n 격자를 뺌.
+   Positional encoding은 입력 embedding에 더하지 않고 attention에서 쓰이므로(RoPE), 세로 흐름에 넣지 않고
+   Embedding과 나란히(너비를 반씩) 두고, 입력 토큰에서 갈라져 Self-attention에서 합쳐지게 세로 선으로만 잇습니다
+   (입력 토큰 → Embedding → Self-attention, 입력 토큰 → Positional encoding → Self-attention).
+   Q · K와의 세부 계산은 발표에서 다루지 않습니다 */
 function attention(s){
-  const blocks=[['다음 토큰 확률',''],['Feed-forward',''],['Self-attention','key'],['Embedding + Positional encoding','pos'],['입력 토큰','']];
-  let stk='<div class="stk">';
-  blocks.forEach(([t,c],i)=>{ if(i) stk+='<div class="conn"></div>'; stk+=`<div class="blk ${c}">${esc(t)}</div>`; });
-  stk+='<div class="rep"><span>× N층</span></div></div>';
+  const k=s.key||'attn', conn='<div class="conn"></div>';
+  const col=(t,c)=>`<div class="col2">${conn}<div class="blk${c}">${t}</div>${conn}</div>`;
+  const stk=`<div class="stk"><div class="blk">다음 토큰 확률</div>${conn}<div class="layer"><div class="blk">Feed-forward</div>${conn}`+
+    `<div class="blk${k==='attn'?' key':''}">Self-attention</div><div class="rep"><span>× N층</span></div></div>`+
+    `<div class="pair">${col('Embedding','')}${col('Positional encoding',' pe'+(k==='pe'?' key':''))}</div>`+
+    `<div class="blk">입력 토큰</div></div>`;
   const co=`<div class="callouts">${s.items.map(d=>`<div class="co"><div class="t">${esc(d.t)}</div><div class="c">${br(d.c)}</div></div>`).join('')}${s.foot?`<div class="cfoot">${esc(s.foot)}</div>`:''}</div>`;
-  let g='<div><div class="agrid">';
-  for(let r=0;r<8;r++) for(let c=0;c<8;c++) g+=`<i class="${c<=r?'f':''}"></i>`;
-  g+='</div><div class="gcap">토큰 n개 → n×n 쌍</div></div>';
+  let g='';
+  if(s.grid!==0){
+    g='<div><div class="agrid">';
+    for(let r=0;r<8;r++) for(let c=0;c<8;c++) g+=`<i class="${c<=r?'f':''}"></i>`;
+    g+='</div><div class="gcap">토큰 n개 → n×n 쌍</div></div>';
+  }
   return `<div class="attn">${stk}${co}${g}</div>`;
 }
 
@@ -928,7 +1123,7 @@ function toc(s){
   return `<div class="toc">${cols.map(c=>`<div>${c.map(row).join('')}</div>`).join('')}</div>`;
 }
 
-const R={hub,flow,flows,pairs,cards,table,code,code2,codefan,codeflow,cardscode,chat,tokens,layers,equation,canvas,loop,seq,attention,ctxbars,curve,toc};
+const R={duo,hub,flow,flows,pairs,cards,table,code,code2,codefan,codeflow,cardscode,chat,tokens,layers,equation,canvas,loop,seq,attention,ctxbars,curve,toc};
 
 function render(s, i){
   if(s.type==='title') return `<section class="slide title-slide" data-i="${i}"><div class="kicker">${esc(s.kicker)}</div><div class="tl"><div class="bar"></div><h1>${br(s.title)}</h1><div class="sub">${esc(s.sub)}</div></div><div class="by">${esc(s.by)}</div></section>`;
@@ -937,7 +1132,7 @@ function render(s, i){
   const src=s.src?`<div>${esc(s.src)}</div>`:'';
   return `<section class="slide" data-i="${i}"><header class="sh"><h2>${esc(s.title)}</h2><div class="meta">${s.check?'<span class="chk">확인 중</span>':''}${s.sec?`<span>${esc(s.sec)}</span>`:''}<span>${num}</span></div></header>`+
     `<div class="body">${R[s.type](s)}</div>`+
-    `<footer class="sf"><div class="note">${s.note?`<i></i><p>${br(s.note)}</p>`:''}</div><div class="side-info">${legend}${src}</div></footer></section>`;
+    (s.nofoot?`${legend?`<div class="floatlg">${legend}</div>`:''}</section>`:`<footer class="sf"><div class="note">${s.note?`<i></i><p>${br(s.note)}</p>`:''}</div><div class="side-info">${legend}${src}</div></footer></section>`);
 }
 
 /* ---------- 조작 ---------- */

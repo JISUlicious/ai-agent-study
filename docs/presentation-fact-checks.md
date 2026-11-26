@@ -2,6 +2,8 @@
 
 [presentation-slides.md](presentation-slides.md)의 발표 슬라이드(`ai-agent-slides.html`)에 쓴 사실을 확인한 기록입니다. 근거 강도(강·중·약)는 확인해 준 세션(ai-wiki, analysis-docs)이 매긴 값입니다. 쪽 번호는 각 절을 적은 날의 기준입니다.
 
+Context window와 Transformer 구조에 관한 확인(ai-wiki 요청 18, 22, 24, 25)은 [presentation-fact-checks-transformer.md](presentation-fact-checks-transformer.md)에 있습니다. 2026-11-25에 이 문서가 300줄을 넘게 되어 주제별로 옮겼습니다.
+
 ## 사실 확인 결과 (ai-wiki 요청 11, 2026-11-24)
 
 근거 강도는 ai-wiki가 매긴 값입니다. 확인된 장은 "확인 중" 표시를 지웠습니다.
@@ -106,60 +108,6 @@ ai-wiki의 구성 제안(해석): Act-only의 "Nothing happens" 반복 → ReAct
 - 한계: 고정 간격 검색(IRCoT)은 긴 추론에서 비용이 매우 큼(검색 한 번 2~5초). FLARE와 DRAGIN은 토큰 확률이나 attention이 필요해 o1 같은 완성형 모델에는 못 씀(Guo 2026, 강). ReAct 실패의 23%는 검색 결과가 비거나 쓸모없어 추론이 흔들린 경우(강). 같은 모델과 검색기라도 하니스에 따라 약 20점 차이(Sen 2026, 강)
 - 반대 근거: 대화 기억 과제에서 단순 RAG가 복잡한 agentic memory를 이김. 차이는 검색 범위에서 났고 찾은 정보의 활용률은 비슷했음(Bao 2026, 강)
 
-### ai-wiki 요청 18 (2026-11-25): context window 크기를 정하는 구조적 요인
-
-사용자 질문: 33쪽 Transformer 구조 한계에서, 128K, 512K, 1M처럼 모델의 토큰 한계 자체를 정하는 구조적 특징이 있지 않나. 지금 33쪽은 O(n²) attention, 학습 길이를 넘는 위치, KV cache, attention budget 넷을 적습니다(요청 11 확인). 물은 것:
-
-1. 위치 표현이 만드는 상한: 학습된 절대 위치 임베딩(표 크기가 상한), RoPE가 학습 길이를 넘으면 무너지는 이유, 길이 확장 기법(Position Interpolation, NTK-aware, YaRN, LongRoPE, RoPE base 조정, ALiBi)
-2. 계산과 메모리: O(n²) 계산과 FlashAttention의 범위, KV cache 크기 공식과 128K · 1M에서의 크기, GQA · MQA · MLA
-3. 학습: 짧게 사전학습한 뒤 길게 이어서 학습하는 사례와 비용
-4. 광고된 창과 실제로 쓰는 길이의 차이(RULER, NoLiMa 등)
-5. 상한을 넘으려는 구조 대안(sliding window, sparse, ring attention, linear attention, SSM)과 대가
-6. 모델별 context 창 수치
-
-슬라이드 반영은 답을 받고 사용자와 정합니다.
-
-#### 답 1/2: 항목 1~3 (2026-11-25)
-
-"서베이"는 Teng 2026의 차세대 LLM 아키텍처 서베이(2차 문헌)입니다. ai-wiki의 결론(해석, 약): 창 크기는 한 요인이 아니라 위치 표현(학습한 길이), 메모리(KV cache가 GPU에 들어가는가), 연산(prefill의 n²), 학습 데이터와 비용이 겹쳐 정합니다. 광고된 창은 대개 "짧게 사전학습 → RoPE 조정과 긴 길이 추가 학습 → 필요하면 YaRN 배율"의 결과입니다.
-
-1. 위치 표현
-   - 학습형 절대 위치 임베딩은 설정한 최대 위치까지만 벡터가 있어 확장 장치 없이는 그 너머를 못 다룸(강, 서베이, 예: BERT, GPT-2, GPT-3). GPT-2는 "512에서 1024로 늘렸다"까지만 있고 1024를 표 크기 상한과 잇는 문장은 없음. BERT는 attention 비용 때문에 학습의 90%를 길이 128로, 10%를 512로 하며 512 단계는 위치 임베딩을 배우기 위한 것(강)
-   - RoPE는 표 상한이 없지만 학습 길이를 넘으면 빠르게 도는 차원이 못 본 각도 조합에 들어가 attention이 "sharply" 나빠짐(중). 길이 일반화는 "fundamental challenge"(강, 서베이)
-   - 확장 기법(대부분 강): Position Interpolation(긴 위치를 학습 범위로 선형 축소, 가까운 위치 해상도도 뭉개짐), NTK-aware · ABF(RoPE base를 키움, 예: Qwen3.8의 rope_theta 10,000,000), YaRN(파장별 보간과 온도 보정, Qwen3.8은 262,144 × 4.0 = 1,048,576, DeepSeek-V2는 4K → 128K, 정적 YaRN은 짧은 입력 품질도 떨어뜨림), LongRoPE(파인튜닝 없이 8배, 256K 파인튜닝 뒤 2048K), LongLoRA(7B를 머신 한 대로 100K), DCA(Qwen2가 YaRN과 함께 128K), ALiBi(거리 비례 페널티, 짧게 학습하고 길게 테스트, 몇 배까지인지는 위키에 없음)
-   - 확장의 한계: "Scaling makes long positions *representable*. It does not make them *usable*"(중). 확장 뒤 사소한 아키텍처 선택이 겹치면 성능이 상대 최대 47% 떨어지고 loss에는 드러나지 않음(R²=0.06, Bertsch 2026, 강)
-2. 연산과 메모리
-   - self-attention O(n²·d)(원조 Transformer, 강). prefill attention O(T²dL), 디코딩은 단계마다 선형이지만 KV cache가 커짐(서베이). Llama-3-8B, A100 한 장에서 300K 토큰 prompt 6분, 1M 30분, attention이 prefill 지연의 90% 이상(MInference, 강)
-   - FlashAttention은 FLOPs가 아니라 메모리 이동을 줄임: GPT-2 medium 길이 1024에서 표준 66.6 GFLOPs · HBM 40.3 GB · 41.7 ms, FlashAttention 75.2 GFLOPs · 4.4 GB · 7.3 ms("The win is IO, not FLOPs", 강). attention 메모리는 제곱에서 선형으로(중)
-   - KV cache: 토큰당 = Σ층(2 × KV head 수 × head 차원), 전체 = 토큰당 × 길이 × 배치 × 바이트(중). FP16 토큰당 Llama-2-7B 512 KiB, Llama-3-8B 128 KiB, Llama-3-70B 320 KiB. KV cache가 가중치보다 커지는 길이는 Llama-2-7B 약 25.7K, Llama-3-8B 약 122K. LLaMA-7B 128K는 fp16 64 GB(3비트 12.0 GB), 10M 토큰은 fp16 4,882.8 GB(KVQuant, 강). Llama-3-8B의 128K · 1M 값은 위키에 없고 공식으로 약 16 GiB · 128 GiB(약, 추론)
-   - MQA는 KV cache를 head 수만큼 줄이고 디코딩 약 12배(Shazeer 2019, 강). GQA는 H/G배(T5-XXL GQA-8 품질 47.1 · 추론 0.28, MHA 47.2 · 1.51), 길이 확장 뒤 HELMET −3.4점(Bertsch). MLA는 압축 latent(512차원)와 RoPE key(64차원)만 캐시(DeepSeek-V2, 강)
-3. 학습
-   - 대부분의 dense 모델은 사전학습 뒤 RoPE base를 바꿔 이어서 학습해 길이를 늘림(Bertsch 2026, 강). 예: 140B 토큰 사전학습 뒤 10B 토큰으로 64K
-   - 사례(강): DeepSeek-V2 4K → 128K(YaRN), NSA 32K 추가 학습 + YaRN, Kimi K3는 NoPE로 8K → 64K → 256K → 1M 단계별. Llama 3.1은 8K 사전학습과 128K 지원만 있고 단계 레시피는 위키에 없음(중). Qwen2.5-1M은 위키에 없음
-   - 깨끗한 긴 문서는 드물고 비싼 학습 자원(강). 긴 길이 추가 학습의 비용 수치는 위키에 없음
-
-#### 답 2/2: 항목 4~6 (2026-11-25)
-
-4. 광고된 창과 실제로 쓸 수 있는 길이
-   - "실제 길이 = 광고된 길이의 X%" 같은 수치는 위키에 없음(RULER 모델별 표, NoLiMa 본문, Fiction.LiveBench, Chroma context rot 보고서 없음)
-   - Gemini 1.5 보고서(강): needle 하나 재현율 530K까지 100%, 1M 99.7%, 10M 99.2%. needle 100개를 한 번에 찾으면 128K까지 약 70%, 1M까지 60% 이상. GPT-4 Turbo는 자기 한도 128K에서 평균 약 50%, Claude 2.1은 200K에서 98%
-   - Lost in the Middle(강): "Extended-context models often score the same as their shorter-context versions". Gollapudi 2026(강): 문서를 500개에서 10k개로 늘리면 정답 문서로 가는 attention 비중이 0.91에서 0.01로, 1M 토큰에서 MS MARCO Recall@1 0.2%, NIAH를 거의 만점 받은 모델도 실제 검색에서 급락. BABILong(강): 사실 하나는 128K · 256K에서 100%지만 사실 셋을 엮는 과제는 16K부터 0에 가까움
-   - NIAH 통과는 약한 근거(중). RULER는 검색과 QA는 버티지만 집계 과제에서 무너짐(중). Anthropic: "A window that accepts N tokens does not use all N equally well", 절벽이 아니라 기울기(중)
-5. 구조 대안과 대가
-   - Sliding window(중): Mistral은 창 4096이 층을 거쳐 약 131K까지 닿음. 학습 때 안 쓴 모델에 추론 때만 씌우면 무너짐(Llama-2-7B perplexity 9.59 → 3,359.95). SWA + GQA는 −9점(Bertsch, 강)
-   - 학습 없이 쓰는 sparse attention(중): 줄일 수 있는 것은 attention 몫뿐(10K에서 약 ¼, 128K에서 70~80%). MInference는 1M에서 10배 빠르지만 짧은 길이에서는 느리고, KV 검색 과제가 무너진 사례. 학습형(중): NSA 64K에서 커널 9배, MoBA 1M에서 6.5배, DSA(DeepSeek-V3.2)는 query마다 상위 2,048 토큰만 보고 약 1T 토큰 추가 사전학습 필요. Ring attention은 위키에 없음
-   - Linear attention과 SSM(강·중): 계산 O(N), 상태 메모리 고정이라 정확한 재현과 복사가 약함("a fixed-size state has finite capacity, so it must overwrite"). Gated DeltaNet 실제 검색 30.6 대 Transformer 37.0 등 1차 출처가 같은 약점을 보고. 하이브리드는 attention 층 약 10%가 최적이라는 보고, 너무 적으면(15:1) 순수 attention보다 나쁨. Jamba 256K KV 4 GB 대 Mixtral 32 GB
-   - StreamingLLM(강): 4M 토큰까지 perplexity 안정이지만 "does not extend the models' context window", 밀려난 토큰은 사라짐. Titans(중)는 테스트 시점에 갱신하는 메모리로 2M 토큰 넘어서도 포화 안 됨
-6. 위키에 있는 모델별 창: GPT-4 8K → 32K, GPT-4 Turbo · GPT-4o 128K, GPT-5.4-mini 400K. Claude-1.3 100K, Claude 3.x 200K, 4.x부터 1M 변형, Sonnet 5.5 1M(출력 최대 128K). Gemini 1.0 32K, 1.5 기본 128K에서 1M · 2M, 연구용 10M. Llama 3.1 128K. Qwen3.8-Flash-Next 학습 창 256K, 1M은 YaRN ×4를 켜야 함, Qwen2.5-32B 128K, Qwen3-4B 40,960. DeepSeek-V2 128K, V3.2 128K 학습. Kimi K3 · GLM-5.2 1M, Solar Mini 4 512K, Jamba 공개 256K(학습 1M), Mistral 7B 8K, Gemma 3 128K 이상. 위키에 없음: GPT-4.1 1M, Llama 4 Scout 10M, MiniMax-01 4M, Gemini 2.5 · 3, Qwen2.5-1M
-
-사용자 질문과 답(2026-11-25, 해석): "KV cache, prefill 연산, 긴 문서 학습은 기능적으로 창을 제한하지 않고, 사실상 학습 단계의 positional encoding이 창을 정하나?" 기능적 상한에 대해서는 대체로 맞습니다. 다만 세 가지를 보탭니다. (1) 정확히는 위치 표현 자체보다 "학습 때 본 길이"가 상한입니다. 학습형 절대 위치는 표 크기가 딱딱한 상한이고, RoPE는 계산은 되지만 학습 길이를 넘으면 무너지는 부드러운 상한이며, 위치 인코딩이 없는 NoPE 모델(Kimi K3)도 8K → 1M 단계별 학습으로 창이 정해집니다. (2) 긴 문서 학습은 따로 떼어진 요인이 아니라 그 길이를 만드는 과정입니다. RoPE 조정이나 YaRN도 대부분 긴 길이 추가 학습과 함께 씁니다. (3) KV cache와 prefill 연산은 모델이 못 하게 막지는 않지만, 학습 길이를 얼마나 늘릴 수 있는지(학습에도 n² 연산과 메모리가 듦)와 서비스가 받아 주는 창을 정합니다. 예로 Gemini 1.5는 연구에서 10M까지 needle 99.2%였지만 제품 창은 128K에서 1M · 2M이었습니다(차이의 이유는 위키에 없음, 비용과 지연은 추정). 그래서 창은 "학습한 길이(기능적 상한) ⊇ 제품이 받아 주는 창(비용) ⊇ 잘 쓰는 길이" 세 겹으로 설명하는 편이 정확합니다.
-
-이어진 질문(2026-11-25): "KV cache와 prefill은 사용 단계의 문제이니, 학습한 길이 + positional encoding을 hard cap으로 봐도 되나?" 발표에서는 "모델의 상한 = 학습한 길이 + 위치 표현(확장 포함)", "사용 단계의 제약 = KV cache 메모리와 prefill 시간"으로 나눠도 됩니다(해석). 단서 셋: 말 그대로 딱딱한 상한(그 너머는 계산 불가)은 학습형 절대 위치뿐이고, RoPE 계열은 계산은 되지만 성능이 무너지는 상한입니다. 사용자가 실제로 부딪히는 딱딱한 한도는 서비스가 정한 최대 입력 길이입니다. 상한은 사전학습 뒤에도 위치 배율과 짧은 추가 학습으로 옮길 수 있습니다(YaRN, LongRoPE는 파인튜닝 없이 8배). 연산과 메모리는 학습 때도 들어 학습 길이를 얼마나 늘릴지에 간접적으로 영향을 줍니다.
-
-슬라이드 반영(2026-11-25, 사용자 의견): 33쪽을 "Attention budget → 품질 저하"와 "학습 길이 → Context window 상한" 두 칸으로 다시 쓰고, KV cache와 prefill은 "사용 단계 비용" 한 줄로 둠. 예시 "256K → 1M"은 Qwen3.8(YaRN ×4, 강).
-
-ai-wiki의 슬라이드 제안(해석): 33쪽에 "창 크기는 어떻게 정해지나"(짧게 사전학습 → RoPE base 조정 + 긴 길이 추가 학습 → YaRN 배율, 예: Qwen3.8 256K → 1M)와 "광고된 창 ≠ 실제로 쓰는 창"(Gemini 1.5 needle 1개 99.7% 대 100개 약 60%, Lost in the Middle)을 보탬. 위키에 수치가 없는 모델은 외부 확인 전에는 쓰지 않음.
-
 ### ai-wiki 요청 19 (2026-11-25): 28쪽 CoT 프롬프트 예시 후보
 
 사용자 요청: 28쪽 CoT 프롬프트의 지어낸 예시(책 15권 문제) 말고 다른 예시를 찾아 달라. 물은 것: Wei 2022 Figure 1(구내식당 사과 문제, 표준 프롬프트 오답과 CoT 정답), Kojima 2022 Figure 1(저글러 문제, "Let's think step by step"), Planning으로 이어지는 변형(Plan-and-Solve, Least-to-Most, Self-consistency, Tree of Thoughts)의 문구와 예시, 수학 밖 영역의 예시, 결과 수치.
@@ -204,20 +152,29 @@ ai-wiki의 슬라이드 제안(해석): 33쪽에 "창 크기는 어떻게 정해
 - 단어 수가 늘면 무너짐(Wei Table 5, 예시는 2단어 이름만 보여 주고 3 · 4단어로 평가): PaLM 540B 표준 → CoT 2단어 7.6 → 99.4, 3단어 0.2 → 94.8, 4단어 0.0 → 63.0. LaMDA 137B 2단어 5.8 → 77.5, 4단어 0.0 → 13.5. PaLM 8B 2단어 2.6 → 18.8. 원문은 풀이 구조가 예시에 그대로 있는 "toy tasks"인데도 "small models still fail"
 - Kojima의 Last Letter Few-shot · Few-shot-CoT 수치는 위키에 없음(Few-shot 비교 표는 수학 과제만). Wei의 Few-shot-CoT 예시는 2단어 이름 넷("Elon Musk" → nk 등)
 
-### ai-wiki 요청 22 (2026-11-25): Context window를 채우는 것과 thinking · 출력
+### ai-wiki 요청 23 (2026-11-25): Primitive AI Agent에 가까운 초기 사례
 
-사용자 요청으로 33쪽 뒤(34쪽)에 대화 이력과 문서가 쌓여 context window를 넘는 막대 개념도를 넣고, thinking budget과 출력도 같은 창의 토큰을 쓴다는 점을 적었습니다. 초안 문구는 "입력(System prompt · Tools + 문서 + 대화 이력) + Thinking + Output ≤ Context window"입니다. 물은 것: 창에 들어가는 것의 목록과 원문 표현, 출력 토큰과 max_tokens의 관계, Claude thinking budget이 max_tokens 안에 들어가는지와 이전 턴 thinking 블록이 빠지는지(도구 사용 중 예외 포함), 다른 모델의 reasoning tokens, 창을 넘을 때 실제 동작(오류, 잘라내기, 자동 compaction)과 하니스 예, 긴 대화에서 무엇이 창을 가장 많이 차지하는지의 수치.
+사용자 요청: 31쪽 Primitive AI Agent(LLM + Tool Use + Memory + Agent Loop, Planning은 흐리게)에 가장 가까운 초기 AI agent를 찾아 달라(예: Devin, Cursor). 물은 것: 후보별 공개 시점, 한 일, 네 요소와 계획 기능을 갖춘 방식(WebGPT, MRKL, ReAct, LangChain agent, Toolformer, HuggingGPT, Generative Agents, Voyager, AutoGPT, BabyAGI, AgentGPT, GPT-Engineer, ChatGPT plugins · Code Interpreter, Devin, Cursor, GitHub Copilot, Aider, SWE-agent, OpenDevin/OpenHands, Claude Code, Codex CLI), 원문의 호칭("proof-of-concept", "AI software engineer" 등), 대표 수치, 네 요소만 갖춘 형태에 가장 잘 맞는 사례, 연 · 월 순서.
 
-답(따로 적은 곳 말고는 강):
+보충(같은 날, 사용자 의견 "출시 당시의 스펙과 기능 위주로"): 후보마다 처음 공개했을 때의 기능만 기준으로 하고, 나중에 더해진 기능은 "이후 추가(연·월)"로 나눠 달라고 함. 출시 당시 네 요소(LLM, 도구 사용, 기억, 반복 루프)와 계획이 있었는지 표로, 출시 시점을 확인할 수 없으면 "시점 없음"으로.
 
-- 창에 들어가는 것: Claude Code 문서 "Claude Code's context window holds everything Claude knows about your session: your instructions, the files it reads, its own responses, and content that never appears in your terminal." 예시 세션 표에서 시작 전 시스템 프롬프트 4,200, 자동 메모리 680, 환경 정보 280, MCP 도구 이름 120, skill 설명 450, CLAUDE.md 둘 2,120 토큰. 작업 중 파일 읽기, 검색 결과, hook 출력, 테스트 출력, 자기 분석이 쌓이고 sub-agent는 따로 된 창에서 요약만 돌아옴. 합계는 compaction 전 22,225, 후 17,095 토큰
-- 도구 정의만으로도 큼(Anthropic advanced tool use, 2025): MCP 서버 5개 도구 58개가 "approximately 55K tokens before the conversation even starts", 내부 사례 134K. Tool Search Tool로 85% 감소
-- 출력: "입력 + 출력 ≤ 창"을 한 문장으로 말한 API 문서 원문은 위키에 없음. 창에 자기 응답이 들어간다(Claude Code 문서), Sonnet 5.5는 창 1M에 출력 최대 128K(Osmani 2026), 매 턴 전체 context를 다시 보낸다(Osmani)
-- thinking: "Thinking counts toward `max_tokens`, so leave room."(Osmani 2026). 도구 사용 중에는 thinking 블록을 "pass these blocks back unchanged". 돌려주지 않는 thinking도 출력 토큰으로 과금. budget_tokens는 최근 모델에서 effort로 바뀜(중). 이전 턴 thinking이 다음 턴 context에서 빠지는지는 Claude에 대해 위키에 없음. MiniMax M2는 이전 추론을 남기고, 다른 방식은 빼는 등 모델마다 다름
-- 넘으면: Claude Code는 한도 근처에서 자동 compaction(1M 창 모델은 약 967K), 끄면 200K 경계에서 "Prompt is too long" 오류. 하니스별 compaction 기준은 Codex 창의 90%, Goose 80%, Cline 90%에서 70%로, Hermes 50~85%, Pi와 OpenClaw는 창 − 16,384 등. 단순히 잘라내는 방식은 위키에 없음
-- 무엇이 많이 차지하나: SkillGym(Ge 2026) 저장된 궤적 텍스트 기준 추론 35.9%, 도구 출력 34.0%, 도구 호출 19.6%(창 점유율과 같지는 않음). 도구 출력 중 나중에 실제로 쓰이는 것은 27%, 36%는 한 번도 안 쓰임(Park 2026)
+답(출시 당시 기능 기준, 열은 공개 | 도구 | 기억 | 자율 루프 | 계획):
 
-슬라이드 반영: "확인 중"을 지우고 아래 알약 셋(Thinking은 max_tokens에 포함하고 출력은 다음 턴의 대화 이력, 도구 정의만 약 55K, 넘으면 compaction 또는 "Prompt is too long")을 더함. "입력 + Thinking + Output ≤ Context window" 식은 출력이 입력에 이어 같은 순서열로 생성된다는 4 · 6쪽 설명에서 나오는 개념식으로 두고, 막대는 개념도로 표시.
+| 사례 | 출시 당시 | 근거 |
+|---|---|---|
+| ReAct (연구) | 2022-10 · Wikipedia search/lookup, ALFWorld · WebShop 명령 · context 안의 Thought/Act/Obs뿐 · Finish까지 반복 · Thought에서 계획 | 강 |
+| AutoGPT (오픈소스) | 2023-03(저장소 03-16) · 검색, 웹, 파일, Python 실행, 하위 에이전트 · 단기 기억 약 4000단어 + 파일 저장 + 장기 기억 관리 · "No user assistance"로 사람 없이 반복 · 응답에 plan 필드. 근거는 Weng 2023-06이 인용한 시스템 프롬프트이고 3월 첫 커밋 내용은 위키에 없음 | 강(모델 GPT-4는 중) |
+| BabyAGI (오픈소스) | 2023-03-28(저장소 04-03) · 첫 버전은 외부 도구 없음 · Pinecone 벡터 DB에 결과 저장과 검색 · 무한 루프 · 작업 생성과 우선순위 에이전트. 140줄, 원래 이름 "Task-Driven Autonomous Agent" | 강 |
+| ChatGPT plugins · Code Interpreter (제품) | 2023-03-23 알파 · 브라우징, 샌드박스 Python, 서드파티 plugin · 대화 이력과 세션 동안의 Python 상태 · 요청 단위, 긴 자율 루프 아님 · 없음 | 강 |
+| Devin (제품) | 2024-03-12 얼리 액세스 · 샌드박스의 shell, 에디터, 브라우저 · "recall relevant context at every step"(구현 비공개) · 혼자 끝까지 작업 · "long-term reasoning and planning". SWE-bench 13.86%(25% 부분집합, 회사 발표, 이전 최고 1.96%). "the first AI software engineer"는 위키가 마케팅 문구로 봄 | 강 |
+| Claude Code (제품) | 2025-02-24 연구 프리뷰 · bash, 파일 읽기, grep, 편집 · CLAUDE.md 자동 로드와 compact 요약 · 에이전트 루프 · 별도 plan mode 없이 /think. 출시 공지 원문은 위키에 없고 근거는 출시 뒤 인터뷰. 이후 hooks(2025-06), subagents(2025-07), plugins · skills(2025-10) | 강/중 |
+| Codex CLI (제품) | 2025-04-16 "experiment"로 공개, "a lightweight coding agent you can run from your terminal". 기억 · 루프 · 계획의 상세는 출시 글에 없음 | 강 |
+
+- 출시 당시 에이전트가 아니었던 것(강): GitHub Copilot(2021-06-29, "AI pair programmer", 줄 · 함수 제안), Cursor(가장 이른 기록 2023-03-14, AI 코드 에디터. 2023-07 nightly "agents"는 일반 공개 안 함, 정식 agent는 2024-11-24 v0.43 Composer Agent)
+- 그 밖: WebGPT(2021-12, 텍스트 브라우저, 질문 하나에 여러 단계), Reflexion(2023-03, 에피소드 기억으로 재시도), Generative Agents(2023-04, 기억 스트림 · 반성 · 계층 계획, 외부 도구 없음), Voyager(2023-05, skill 라이브러리, "first"는 embodied lifelong 범위), SWE-agent(2024-04, SWE-bench 12.5%), OpenHands(2024, Devin의 공개 재현), Claude computer use(2024-10, 모델 기능), Operator(2025-01)
+- Weng 2023-06(강): "Several proof-of-concepts demos, such as AutoGPT, GPT-Engineer and BabyAGI, serve as inspiring examples." AutoGPT에는 "quite a lot of reliability issues"
+- 위키에 "최초의 에이전트"를 판정한 문장은 없고 "first"는 모두 벤더 주장. ReAct · SWE-agent에서 Devin으로의 영향은 확인되지 않음("Devin's post cites neither")
+- ai-wiki 제안(해석): 연구 원형 ReAct, 네 요소를 갖춘 첫 오픈소스 AutoGPT(최소형 대비로 BabyAGI), 첫 상용 Devin
 
 ## MCP 스펙 확인 결과 (analysis-docs, 2026-11-24)
 
@@ -229,12 +186,48 @@ ai-wiki의 슬라이드 제안(해석): 33쪽에 "창 크기는 어떻게 정해
 | 42 | host가 client 여럿을 만들고 client와 server는 1:1. 표준 전송은 stdio와 Streamable HTTP. Streamable HTTP는 로컬에도 쓸 수 있음 | "로컬", "원격"을 예시로 표시 |
 | 43 | 2025-11-25판 순서는 initialize → result → notifications/initialized → tools/list → tools/call. ping은 순서의 한 단계가 아니라 양쪽 어디서나 아무 때나 보내는 연결 확인 | ping을 순서에서 빼 옆 상자로 옮기고 "2025-11-25 기준"을 적음 |
 | 43 | 최신 2026-07-28판은 stateless로 바뀌어 initialize 핸드셰이크와 ping이 없음. 요청마다 `_meta`에 버전과 기능을 넣고, 서버는 server/discover를 구현. 이 판에서 Roots와 Sampling은 Deprecated | 옆 상자에 요약 |
-| 36, 37 | 36쪽은 원문과 일치. 원문 폴더 구조에 assets/(선택)가 있음. "역할: Instruction, Tool, Context engineering"은 스펙에 없는 분류이고, scripts/는 새 도구를 정의하지 않음 | 37쪽에 assets/를 넣고, 역할 열을 "발표자 해석"으로 표시. Tool 설명에 "새 도구 정의는 아님" |
+| 36, 37 | 36쪽은 원문과 일치. 원문 폴더 구조에 assets/(선택)가 있음. "역할: Instruction, Tool, Context engineering"은 스펙에 없는 분류이고, scripts/는 새 도구를 정의하지 않음 | 37쪽에 assets/를 넣고, 역할 열을 "발표자 해석"으로 표시(2026-11-25 사용자 요청으로 이 표시는 뺌, 지금 42쪽). Tool 설명에 "새 도구 정의는 아님" |
 
 결정(2026-11-24, 사용자): MCP는 최신 스펙(2026-07-28)을 따릅니다. 43쪽을 server/discover(선택) → tools/list → tools/call 흐름으로 바꾸고, 요청마다 `_meta`에 버전과 기능을 싣는 점, 모든 결과에 resultType이 붙는 점을 적었습니다. 2025-11-25판과의 차이(initialize 핸드셰이크와 ping 없음, input_required면 입력을 실어 다시 요청)는 옆 상자에 둡니다. 41쪽 출처도 2026-07-28판으로 바꿨습니다. Claude Code 같은 호스트가 지금 어느 판으로 통신하는지는 analysis-docs도 확인하지 못했습니다.
 
+## Prompt 장 확인 (ai-wiki 요청 28, 2026-11-26)
+
+7쪽 LLM Prompt 구성과 8쪽 Prompt engineering을 넣은 뒤 확인했습니다. 큰 틀은 맞고, 고친 곳은 아래와 같습니다.
+
+| 항목 | 판정 | 근거 | 반영 |
+|---|---|---|---|
+| 역할별 메시지 → chat template → 토큰 열 → assistant 뒤부터 생성 | 강(마지막 부분은 예시에서 읽히는 것이라 중) | Roitman 2026 "Chat templates encode this structure into the token sequence", mlx-lm 문서의 ChatML 예 | 그대로 |
+| Qwen의 ChatML 형식(`<\|im_start\|>role … <\|im_end\|>`) | 강 | Roitman 2026 "ChatML is the most widely used chat template", mlx-lm 문서, Qwen을 쓴 논문들 | 그대로 |
+| 생성 프롬프트가 `<\|im_start\|>assistant`로 끝남 | 중 | 예시들이 그 형식. add_generation_prompt 설명 원문은 위키에 없음 | 그대로 |
+| Qwen3 thinking 토큰 | 약 | 위키의 예시("Illustrative")에 assistant 뒤 빈 `<think>` 블록 | 코드 마지막 줄에 "(Qwen3는 thinking 설정에 따라 <think> 블록부터)"를 붙임 |
+| instruction tuning의 출처 | 강 | instruction tuning은 FLAN(Wei et al., 2021)과 InstructGPT(Ouyang et al., 2022)가 함께 냄. FLAN은 SFT만, InstructGPT는 SFT 뒤 RLHF | 출처를 "instruction tuning(Wei et al., 2021 FLAN)과 RLHF(Ouyang et al., 2022)의 결과"로 고침 |
+| 카드 넷과 Anthropic 기법 | 확인 못 함 | Anthropic prompt engineering 문서 원문이 위키에 없음. context engineering 글(2025)에 명확한 지시, XML 태그 · Markdown 섹션 구분, few-shot 예시가 있음. "role"은 기법명으로 없고 background 섹션 권고가 가장 가까움(중) | 출처를 Anthropic, Effective context engineering (2025)로 바꾸고 역할 지정 카드를 "역할과 배경 정보"로 다듬음. CoT와 prompt chaining은 뒤 장에서 다루므로 카드에 넣지 않음 |
+| few-shot · in-context learning 출처 Brown et al., 2020 | 강 | GPT-3 논문이 "in-context learning"이라는 말을 씀 | 그대로, 출처에 ICL 표기 |
+| 설명 문장(prompt engineering 정의) | 강 | Weng 2023 "without updating the model weights", Liu et al. 2021 | 제안대로 "모델 가중치를 바꾸지 않고 입력(지시 · 예시 · 형식)만 설계해 원하는 출력을 얻는 일"로 바꾸고 출처에 Weng 2023을 더함 |
+
+- 참고: 위키는 prompt engineering을 주로 고정된 입력(특히 시스템 프롬프트)을 다루는 일로, 매 턴 바뀌는 context 관리를 context engineering으로 구분합니다. 39쪽(Context engineering 개념)의 대비와 맞습니다.
+- system · user · assistant 역할 구분과 chat template 자체의 출처는 위키에 없습니다.
+
+## In-context learning 장 확인 (ai-wiki 요청 29, 2026-11-26)
+
+| 항목 | 판정 | 근거 | 반영 |
+|---|---|---|---|
+| 같은 과제를 예시와 지시로, 둘 다 가중치를 바꾸지 않고 prompt만으로 | 강 | GPT-3 §2: few-shot은 "no weight updates", zero-shot은 "only given a natural language instruction". 번역 예는 GPT-3 Figure 2.1과 같은 구성 | 출처에 "Figure 2.1 방식" |
+| "Pre-training 규모가 커지며 나타남" | 규모와 함께 좋아짐은 강, "나타남"은 고침 | GPT-3 Figure 1.2 "Larger models make increasingly efficient use of in-context information". Schaeffer 외(2023)는 급격한 출현이 흔히 지표 탓이라고 봄 | "커질수록 강해짐" |
+| Instruction tuning · RLHF로 "강화" | 강 | base 모델도 zero-shot 지시를 어느 정도 따름(GPT-3). FLAN은 zero-shot을 크게 높임, InstructGPT "Making language models bigger does not inherently make them better at following a user's intent" | "크게 강화, 규모만으로는 부족" |
+| ICL과 instruction following을 맞세우는 구성 | 고침 | GPT-3 정의: ICL은 "conditioned on a natural language instruction and/or a few demonstrations". 지시만 주는 zero-shot도 ICL | 제목을 In-context learning으로, 두 열을 few-shot · zero-shot으로 |
+
 ## 변경 이력
 
+- 2026-11-26: ai-wiki 요청 29(7쪽 In-context learning) 답을 적음
+- 2026-11-26: ai-wiki 요청 28(7쪽 LLM Prompt 구성, 8쪽 Prompt engineering) 답을 적음
+- 2026-11-25: MCP 스펙 확인 표의 36, 37쪽 행에 "발표자 해석" 표시를 사용자 요청으로 뺐다고 적음
+- 2026-11-25: 300줄을 넘게 되어 context window와 Transformer 구조에 관한 요청 18, 22, 24, 25를 presentation-fact-checks-transformer.md로 옮김. 내용은 바꾸지 않음
+- 2026-11-25: ai-wiki 요청 25(최신 LLM의 위치 인코딩 현황) 절을 더함. 답을 기다리는 중
+- 2026-11-25: ai-wiki 요청 24 답(RoPE는 attention 안에서 Q · K를 회전, 256K → 1M은 설정으로 늘린 예)을 적고 33, 35쪽 반영 내용을 기록
+- 2026-11-25: ai-wiki 요청 24(RoPE가 들어가는 자리) 절을 더함. 답을 기다리는 중
+- 2026-11-25: ai-wiki 요청 23 답(출시 당시 기능 기준 초기 사례 표)을 적음
+- 2026-11-25: ai-wiki 요청 23(초기 AI agent 사례) 절을 더함. 답을 기다리는 중
 - 2026-11-25: ai-wiki 요청 22 답을 적고 34쪽 반영 내용을 기록
 - 2026-11-25: ai-wiki 요청 22(34쪽 Context window 초과) 절을 더함. 답을 기다리는 중
 - 2026-11-25: 요청 18의 33쪽 반영 내용을 적음

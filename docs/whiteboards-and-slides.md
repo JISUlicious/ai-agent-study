@@ -89,6 +89,8 @@ Claude Design 캔버스에 시안 다섯 가지를 만들었습니다: https://c
 
 ## 변경 이력
 
+- 2026-11-26: 사용자가 '에이전트 구성요소' 보드의 정리 그림을 직접 다시 그림(AI Agent 상자 안에 Controls · Agent Loop · Internal Tools · Context engineering, 바깥에 LLM · External Tools · Tool Exec. Env. · Evaluation · 활용 사례, Model · Tool · Stop Hook 네모). 사용자 요청으로 Evaluation 상자에 A안(구성요소 넷: Eval Set, Grader, Metrics, CI Regression, 근거는 evaluation-elements.md)을 넣음. 다른 안은 64쪽과 같은 과정 넷(Use-Cases → Eval Set → Metrics → 확장)
+- 2026-11-26: 사용자 요청으로 '에이전트 구성요소' 보드 오른쪽(x 1600부터)에 발표 63쪽 AI Agent 정리 그림을 옮김(가운데 LLM 호출 · Agent loop · Tool 호출, 둘레 상자 Context engineering · Controls · Verification · Evaluation · 사례). 기존 네 기둥 그림은 건드리지 않음
 - 2026-11-24: 발표 HTML 슬라이드(ai-agent-slides.html) 절을 더함
 - 2026-11-24: 매트릭스 보드의 hook을 단계 대신 모델 호출과 도구 호출을 감싸는 상자로 바꿈(→ hook-points.md)
 - 2026-11-24: 매트릭스 보드에서 Persistence를 Memory에 합침(개념 8칸, 아랫줄 세 칸, Memory 상자 확장)
