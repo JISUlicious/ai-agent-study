@@ -16,6 +16,8 @@
 | [docs/loop-interventions.md](docs/loop-interventions.md) | 루프 개입 장치 스터디: 내장 단계 · 하니스 확장 · 사용자 hook을 묶은 분류, 하니스별 마지막 결정권, 내장 context 단계 · 기록 · 알림 비교, 루프 지점별 종합(ai-wiki 요청 27) |
 | [docs/hook-uses.md](docs/hook-uses.md) | Hook 쓰임 분류 스터디: 기능 분류(8), 하니스별 first-party 기능과 사용자 hook, hook이 아닌 내장 기능, 신뢰도 근거("Put guardrails in hooks"), 구성요소 대응 출처, Hook 섹션 재구성 후보(ai-wiki 요청 26) |
 | [docs/verification-hook-review.md](docs/verification-hook-review.md) | Verification을 hook으로 합칠지 검토(2026-11-24), 판정 모델을 붙이는 방법(ai-wiki 요청 13). presentation-slides.md에서 옮김 |
+| [docs/concept-function-component-research.md](docs/concept-function-component-research.md) | 새 발표(개념 · 기능 · 구성요소) 조사 |
+| [docs/sources/agent-modules-mapping.md](docs/sources/agent-modules-mapping.md) | analysis-docs의 에이전트 구현 모듈 대응표 사본 |
 | [docs/hosting.md](docs/hosting.md) | 정적 페이지를 주소로 공개하는 방법과 대안 |
 
 작업 기록은 [logs.md](logs.md)에 있습니다.
