@@ -1,5 +1,6 @@
 # 작업 기록
 
+- 2026-11-26: 1시간 · 초중급 엔지니어(웹, ML, 제조) 조건으로 발표 목차 35쪽 작성 (→ docs/agent-presentation-outline.md)
 - 2026-11-26: analysis-docs 종합 문서(태그 고정 링크 포함) 사본 추가 (→ docs/sources/agent-modules-mapping.md)
 - 2026-11-26: analysis-docs 답을 받아 3부 구성요소(모듈 18개 × 프레임워크 11개 대응표) 정리 (→ docs/concept-function-component-research.md)
 - 2026-11-25: ai-wiki 답을 받아 1부 개념 · 2부 기능 조사 정리, 위키에 없던 원문 5건 직접 확인 (→ docs/concept-function-component-research.md)
