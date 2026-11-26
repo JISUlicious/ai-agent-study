@@ -217,8 +217,32 @@ ai-wiki의 구성 제안(해석): Act-only의 "Nothing happens" 반복 → ReAct
 | Instruction tuning · RLHF로 "강화" | 강 | base 모델도 zero-shot 지시를 어느 정도 따름(GPT-3). FLAN은 zero-shot을 크게 높임, InstructGPT "Making language models bigger does not inherently make them better at following a user's intent" | "크게 강화, 규모만으로는 부족" |
 | ICL과 instruction following을 맞세우는 구성 | 고침 | GPT-3 정의: ICL은 "conditioned on a natural language instruction and/or a few demonstrations". 지시만 주는 zero-shot도 ICL | 제목을 In-context learning으로, 두 열을 few-shot · zero-shot으로 |
 
+## 출처 표기 전체 검증 (ai-wiki 요청 30, 2026-11-26)
+
+66쪽 덱의 하단 출처를 모두 다시 확인했습니다. 대부분은 요청 7~29에서 확인한 내용과 같고, 표기를 고친 곳은 아래와 같습니다.
+
+| 쪽 | 고친 표기 | 근거 |
+|---|---|---|
+| 13, 27 | Anthropic, Building effective agents (2024) | 2024-12 블로그 글. 46 · 65쪽의 2025 가이드와 다른 문서(강) |
+| 46, 65 | Anthropic, Building Effective AI Agents 가이드 (2025) | 2025-12 기업용 가이드. supervisor(중앙화) · swarm(분산화) 구분이 원문에 있음(강) |
+| 9, 36, 40, 41, 47 | Anthropic, Effective context engineering for AI agents (2025) | 41쪽 "Anthropic, 2025"를 제목까지, 40쪽 (2025-09)를 연도로 통일. 인용문 "the smallest possible set of high-signal tokens"는 원문(강) |
+| 44 | Agent Skills spec (agentskills.io) · Anthropic, Equipping agents for the real world with Agent Skills (2025) | ~100 토큰, 5,000 토큰 미만 권장은 스펙 수치(강) |
+| 48 | MCP: Anthropic 2024-11 발표, 2025-12 Linux Foundation(AAIF)에 기증 | 위키 mcp 개념 페이지 연표(강) |
+| 17 | Qwen3.5 기본 tool call 템플릿 (Li et al., 2026 부록 인용), Qwen3 · Qwen2.5 예는 Roitman 2026 · vLLM 문서 | Qwen 공식 템플릿 원문은 위키에 없음 |
+| 19 | Gao et al., 2026 부록 | 2,213개, 24개 카테고리 일치(강) |
+| 38 | Xiao et al., 2023 (StreamingLLM), Qwen3.8-Flash-Next "서빙 설정" | 추가 학습이 아니라 설정으로 늘린 경우(요청 24) |
+| 39 | Osmani, Building with Claude Sonnet 5.5 (2026) | "Thinking counts toward max_tokens"(강) |
+| 61 | Huntley 2025 (Ralph) | 2025-07-14 글. 다른 장과 연도 표기로 통일 |
+| 64 | Frontier Design Benchmark (Contra Labs × BenchFlow, 2026) · Liu et al., 2026 · Kulikov et al., 2026 (Autodata) | "그래픽스 에이전트 서베이", "등"을 구체적으로(강) |
+| 65 | Anthropic, Demystifying evals for AI agents (2026) | 2026-01-09 글(강) |
+
+- 그대로 둔 것: 49 · 51쪽 MCP 스펙 2026-07-28판과 50쪽 "host가 client를 만들고 client와 server는 1:1"은 위키에 없지만, 2026-11-24 analysis-docs 세션이 스펙 저장소 원문으로 확인했습니다(이 문서의 "MCP 스펙 확인 결과").
+- 근거가 약하거나 중인 것: 58쪽 Replit 사례는 Lynch 2025의 참고문헌 항목만 있음(약). Raj 2026과 AI-Native SDLC Playbook은 원문 파일 없이 요약 페이지로 확인(중). 11쪽 "없애지는 못함"을 직접 쓴 문장은 없음(중).
+- 표기 원칙(해석): 회사 글은 "회사, 제목 (연도)", 논문과 개인 글은 "저자 연도" 또는 "저자 et al., 연도". 저자가 여럿인지 확인되지 않은 개인 글(Weng, Teng, Shihipar, Raj, Ning, Zhang)은 "저자 연도"로 둠.
+
 ## 변경 이력
 
+- 2026-11-26: ai-wiki 요청 30(출처 표기 전체 검증) 답을 적음
 - 2026-11-26: ai-wiki 요청 29(7쪽 In-context learning) 답을 적음
 - 2026-11-26: ai-wiki 요청 28(7쪽 LLM Prompt 구성, 8쪽 Prompt engineering) 답을 적음
 - 2026-11-25: MCP 스펙 확인 표의 36, 37쪽 행에 "발표자 해석" 표시를 사용자 요청으로 뺐다고 적음

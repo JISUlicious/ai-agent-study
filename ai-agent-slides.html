@@ -325,6 +325,17 @@ body{word-break:keep-all;overflow-wrap:break-word}
 #hud{position:fixed;right:14px;bottom:12px;display:flex;align-items:center;gap:6px;font-size:13px;color:#3A3A36;z-index:5}
 #hud button{font:inherit;border:1px solid #8E8F92;background:#E4E4E1;border-radius:8px;padding:4px 10px;cursor:pointer;color:#1A1A18;min-width:34px;min-height:30px}
 #hud button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#hud button[aria-pressed="true"]{background:#F6CDB9;border-color:var(--accent)}
+/* 리허설 모드: 장마다 30초 줄어드는 아래 선, 오른쪽에 남긴 · 넘긴 시간 게이지 */
+#rh{position:fixed;left:50%;top:50%;width:1280px;height:720px;margin:-360px 0 0 -640px;transform:scale(var(--s));pointer-events:none;z-index:4;display:none}
+#rh.on{display:block}
+#rh .line{position:absolute;left:0;bottom:0;height:3px;width:100%;background:var(--accent);opacity:.55;transform-origin:left center}
+#rhb{position:fixed;right:0;top:0;bottom:0;width:3px;pointer-events:none;z-index:4;display:none}
+#rhb i{position:absolute;left:0;right:0}
+#rhb .pos{bottom:50%;background:var(--accent);opacity:.45}
+#rhb .neg{top:50%;background:var(--accent);opacity:.45}
+#rhv{position:fixed;right:8px;bottom:48px;font:500 11px var(--mono);color:#8E8F92;pointer-events:none;z-index:4;display:none}
+body.rh #rhb,body.rh #rhv{display:block}
 #cnt{min-width:58px;text-align:center;font-family:var(--mono)}
 #list{position:fixed;inset:0;background:rgba(26,26,24,.55);display:none;align-items:center;justify-content:center;z-index:10}
 #list.open{display:flex}
@@ -337,7 +348,7 @@ body{word-break:keep-all;overflow-wrap:break-word}
   html,body{overflow:visible;height:auto;background:#fff}
   #stage{position:static}
   .slide{position:relative;left:auto;top:auto;margin:0;transform:none;visibility:visible;break-after:page;page-break-after:always}
-  #hud,#list{display:none!important}
+  #hud,#list,#rh,#rhb,#rhv{display:none!important}
   @page{size:1280px 720px;margin:0}
 }
 </style>
@@ -356,7 +367,11 @@ body{word-break:keep-all;overflow-wrap:break-word}
   <span id="cnt"></span>
   <button id="next" type="button" aria-label="다음 슬라이드">›</button>
   <button id="openList" type="button">목록</button>
+  <button id="rehearse" type="button" aria-pressed="false" title="리허설 모드 (R)">리허설</button>
 </nav>
+<div id="rh" aria-hidden="true"><div class="line"></div></div>
+<div id="rhb" aria-hidden="true"><i class="pos"></i><i class="neg"></i></div>
+<div id="rhv" aria-hidden="true"></div>
 <div id="list" role="dialog" aria-label="슬라이드 목록"><div class="box"></div></div>
 <noscript>이 슬라이드는 JavaScript가 필요합니다.</noscript>
 <script>
@@ -404,7 +419,7 @@ const S = [
   {t:'예시 (few-shot)', c:'입력과 출력 예를 몇 개 보여 줌\nIn-context learning', key:1},
   {t:'출력 형식', c:'JSON · XML 태그로 형식을 정함\n예: JSON으로만 답하게 함 (⟨JSON 출력⟩쪽)'}],
   note:'모델 가중치를 바꾸지 않고\n입력(지시 · 예시 · 형식)만 설계해 원하는 출력을 얻는 일',
-  src:'Weng 2023 · Anthropic, Effective context engineering (2025) · Brown et al., 2020 (few-shot, ICL)'},
+  src:'Weng 2023 · Anthropic, Effective context engineering for AI agents (2025) · Brown et al., 2020 (few-shot, ICL)'},
 {sec:'LLM', title:'LLM 한계', type:'pairs', style:'dash', legend:[['dash','원인']], rows:[
   {a:{t:'Next token prediction', c:'그럴듯한 다음 토큰'}, b:{t:'Hallucination', c:'사실과 다른 내용을 생성', prob:1}},
   {a:{t:'Training dataset', c:'학습 시점에 고정'}, b:{t:'지식 한계', c:'최신 정보 · 내부 자료 없음', prob:1}},
@@ -424,7 +439,7 @@ const S = [
   left:[{t:'추론 한계', prob:1}],
   center:{t:'Prompt chaining', c:'작은 단계로 분해'},
   right:[{t:'LLM 호출 1', c:'개요 작성'},{t:'Gate', c:'중간 결과 검사'},{t:'LLM 호출 2', c:'앞 출력으로 본문 작성'}],
-  note:'한 번에 풀기 어려운 작업을 단계로 나누고, 앞 단계 출력을 다음 단계 입력으로', src:'Anthropic, Building Effective Agents (2024)'},
+  note:'한 번에 풀기 어려운 작업을 단계로 나누고, 앞 단계 출력을 다음 단계 입력으로', src:'Anthropic, Building effective agents (2024)'},
 
 {sec:'Tool Use', title:'질의 기반 RAG', type:'flow', steps:[
   {t:'질문', c:'사용자 입력'},
@@ -451,7 +466,7 @@ const S = [
   {label:'입력 · Qwen3.5 chat template 중 tool call 형식 부분 (도구 목록 <tools> 다음에 붙음)', wrap:1, code:'If you choose to call a function ONLY reply in the following format with NO suffix:\n\n⟦<tool_call>⟧\n<function=example_function_name>\n<parameter=example_parameter_1>\nvalue_1\n</parameter>\n<parameter=example_parameter_2>\nThis is the value for the second parameter\nthat can span\nmultiple lines\n</parameter>\n</function>\n⟦</tool_call>⟧'},
   {label:'출력 · "서울 날씨 알려줘"에 대한 호출', code:'⟦<tool_call>⟧\n<function=get_weather>\n<parameter=city>\nSeoul\n</parameter>\n</function>\n⟦</tool_call>⟧'}],
   note:'템플릿이 알려 준 형식대로 모델이 호출을 씀',
-  src:'Qwen3.5 chat template · 참고: Qwen3 · Qwen2.5는 <tool_call> 안에 JSON (vLLM 문서)'},
+  src:'Qwen3.5 기본 tool call 템플릿 (Li et al., 2026 부록 인용) · 참고: Qwen3 · Qwen2.5는 <tool_call> 안에 JSON (Roitman 2026, vLLM 문서)'},
 {sec:'Tool Use', title:'Tool call 실행', type:'codeflow', fs:16,
   steps:[{t:'LLM', c:'호출을 JSON으로'},{t:'Parser', c:'json.loads'},{t:'get_weather()', c:'프로그램이 실행', key:1},{t:'결과', c:'messages에 추가'},{t:'LLM', c:'최종 답 생성'}],
   code:'out = llm(messages, tools=[get_weather])     ⟪# 모델은 호출만 출력⟫\ncall = json.loads(out)       ⟪# {"name": "get_weather", "arguments": {"city": "Seoul"}}⟫\nresult = ⟦get_weather⟧(**call["arguments"])   ⟪# {"temp": 3, "sky": "맑음"}⟫\nmessages.append(tool_result(result))\nanswer = llm(messages)        ⟪# "서울은 3도, 맑습니다"⟫',
@@ -460,7 +475,7 @@ const S = [
   center:{t:'Tool use'},
   right:[{t:'실시간 정보', c:'검색 · 날씨 · 일정'},{t:'정확한 정보', c:'계산 · DB 조회'},{t:'다양한 기능', c:'파일 · 브라우저 · 외부 서비스'}],
   chips:{label:'awesome-mcp-servers 카테고리 예 (24개 중)', items:['developer-tools','search-extraction','databases','browser-automation','file-management','communication']},
-  note:'모델이 못 하는 일을 도구에 맡겨 할 수 있는 일을 넓힘', src:'Gao 2026 부록: awesome-mcp-servers 2,213개, 24개 카테고리'},
+  note:'모델이 못 하는 일을 도구에 맡겨 할 수 있는 일을 넓힘', src:'Gao et al., 2026 부록: awesome-mcp-servers 2,213개, 24개 카테고리'},
 
 {sec:'Tool Use', title:'Tool call 반복 실패', type:'code', fs:15, label:'Act-only 궤적 · ALFWorld (텍스트로 집안일을 하는 환경)',
   code:'Your task is to: Put some pepper shaker on a drawer.\nAct 1  Go to drawer 1\n⟪Obs 1⟫  The drawer 1 is closed.\nAct 2  Open drawer 1\n⟪Obs 2⟫  You open the drawer 1. … In it, you see a dishsponge 2, and a spoon 1.\nAct 3  Go to sinkbasin 1\n⟪Obs 3⟫  On the sinkbasin 1, you see a dishsponge 3, a spatula 1, and a spoon 2.\nAct 4  Take peppershaker 1 from sinkbasin 1\n⟪Obs 4⟫  ⟦Nothing happens.⟧\nAct 5  ⟦Take peppershaker 1 from sinkbasin 1⟧\n⟪Obs 5⟫  ⟦Nothing happens.⟧',
@@ -500,7 +515,7 @@ const S = [
   nodes:[{t:'LLM 호출', c:'① read_file 요청\n④ edit_file 요청'},{t:'Tool 실행', c:'② README.md 읽기\n⑤ 설치 방법 절 추가'},{t:'결과 추가', c:'③ 파일 내용\n⑥ 수정 완료'}],
   center:{t:'Agent loop'}, entry:{t:'사용자 입력', c:'"README에 설치 방법\n추가해줘"'}, exit:{t:'답', c:'⑦ 도구 호출 없음\n"추가했습니다"'},
   note:'①~③에서 파일을 읽고 ④~⑥에서 고친 뒤, ⑦에서 도구 호출 없이 답하면 루프가 끝남',
-  src:'에이전트: 환경의 피드백을 받으며 루프 안에서 도구를 쓰는 LLM (Building Effective Agents, 2024)'},
+  src:'에이전트: 환경의 피드백을 받으며 루프 안에서 도구를 쓰는 LLM (Anthropic, Building effective agents, 2024)'},
 
 {sec:'Planning', title:'LLM 한계 극복 현황', type:'pairs', legend:[['solid','대응'],['dash','원인']], rows:[
   {a:{t:'Hallucination', c:'부분 해소: 줄었지만 남아 있음', prob:1}, b:{t:'RAG · Tool call', c:'근거를 찾아 넣어 환각을 줄이고\n최신 · 내부 정보를 보충', span:2}},
@@ -547,7 +562,7 @@ const S = [
 {sec:'Context Engineering', title:'Transformer 구조 한계 1: Attention budget', type:'attention', items:[
   {t:'Attention budget → 품질 저하', c:'Self-attention: 토큰이 늘수록 주의가 n²쌍에 얇게 퍼짐\n필요한 정보를 놓치고, 중간 위치에서 특히 심함'}],
   note:'context가 길수록 attention이 얇게 퍼져 품질이 떨어짐',
-  src:'Anthropic, Effective context engineering (2025)'},
+  src:'Anthropic, Effective context engineering for AI agents (2025)'},
 {sec:'Context Engineering', title:'Lost in the middle', type:'curve',
   side:{t:'실험 결과', items:['중간 위치의 정답률이 문서 없이 답할 때보다 낮기도 함 (GPT-3.5)','문서를 20개에서 50개로 늘려도 1~1.5%만 오름','context 창이 긴 모델이 context를 더 잘 쓰지는 않음']},
   note:'필요한 정보가 긴 context의 중간에 있으면 잘 쓰지 못함 (다중 문서 QA, 문서 10~30개)', src:'Liu et al., 2023'},
@@ -555,7 +570,7 @@ const S = [
   {t:'학습 길이 → Context window 상한', c:'Positional encoding: 학습한 길이를 넘는 위치에서 attention이 무너짐\nPositional encoding 조정(YaRN 등)으로 늘림: 방법에 따라 짧은 추가 학습\n예: Qwen3.8-Flash-Next는 256K로 학습, YaRN ×4 설정으로 1M'}],
   foot:'사용 단계 비용: KV cache 메모리와 prefill 시간은 길이에 따라 늘어남',
   note:'창의 상한은 학습한 길이와 Positional encoding이 정함: KV cache와 prefill은 사용 단계의 비용',
-  src:'Teng 2026 서베이 · StreamingLLM (2023) · Qwen3.8-Flash-Next 설정 (YaRN ×4)'},
+  src:'Teng 2026 서베이 · Xiao et al., 2023 (StreamingLLM) · Qwen3.8-Flash-Next 서빙 설정 (YaRN ×4)'},
 {sec:'Context Engineering', title:'Context window 초과', type:'ctxbars', limit:100, max:132,
   legend2:[['sys','System prompt · Tools'],['doc','문서'],['hist','대화 이력 · Tool 결과'],['think','Thinking'],['out','Output']],
   rows:[
@@ -565,7 +580,7 @@ const S = [
   limitLabel:'Context window 한도 (예: 200K 토큰)',
   gen:{ctx:['대한민국','의',' 수도','는'], prev:[' 서울'], next:'입니다', cap:'생성한 토큰(흰 칸)은 입력 끝에 붙어 다음 토큰을 만들 때 다시 읽힘 (⟨LLM 토큰 생성⟩쪽): 출력도 창을 차지'},
   note:'대화 이력과 문서가 턴마다 쌓여 창을 넘음: thinking과 출력도 같은 창의 토큰을 씀',
-  src:'막대는 개념도 (비율은 예시) · Thinking은 max_tokens에 포함: Osmani 2026'},
+  src:'막대는 개념도 (비율은 예시) · Thinking은 max_tokens에 포함: Osmani, Building with Claude Sonnet 5.5 (2026)'},
 {sec:'Context Engineering', title:'Context engineering 개념', type:'canvas', h:380,
   texts:[{x:0,y:0,t:'Prompt engineering',cls:'ct'},{x:600,y:0,t:'Context engineering',cls:'ct'},
     {x:0,y:330,t:'한 번 작성한 지시',cls:'cc'},{x:600,y:340,t:'가능한 정보 중 이번 턴에 필요한 것만 고름',cls:'cc'}],
@@ -579,12 +594,12 @@ const S = [
     ['s1','r','cu','l'],['s2','r','cu','l'],['s3','r','cu','l'],['s6','r','cu','l'],['s4','r','cu','l'],['s5','r','cu','l'],
     ['cu','b','cw','t'],['cw','b','cl','t'],['cl','r','cu','r',{label:'매 턴',dash:1,out:24}]],
   note:'한 번 쓰는 지시가 아니라, 매 턴 context에 들어갈 정보를 고르는 일',
-  src:'Anthropic, Effective context engineering for AI agents (2025-09)의 그림을 다시 그림 · Agent Skills는 발표자가 더함'},
+  src:'Anthropic, Effective context engineering for AI agents (2025)의 그림을 다시 그림 · Agent Skills는 발표자가 더함'},
 {sec:'Context Engineering', title:'Context engineering 원칙', type:'flow', plain:1, steps:[
   {t:'부족', c:'판단 근거 없음'},
   {t:'적정', c:'다음 판단에 필요한 정보만', key:1},
   {t:'과잉', c:'주의 분산 · 비용 증가'}],
-  note:'부족하지도 넘치지도 않게: "the smallest possible set of high-signal tokens"', src:'Anthropic, 2025'},
+  note:'부족하지도 넘치지도 않게: "the smallest possible set of high-signal tokens"', src:'Anthropic, Effective context engineering for AI agents (2025)'},
 {sec:'Context Engineering', title:'Context engineering 대상', type:'cards', cols:3, cards:[
   {t:'System prompt', c:'역할 · 규칙 · 작업 방식'},
   {t:'Tool · Skill schema', c:'이름 · 설명 · 입력 형식'},
@@ -603,7 +618,7 @@ const S = [
   {t:'SKILL.md 본문', c:'skill이 활성화될 때\n5,000 토큰 미만 권장', key:1},
   {t:'Resources', c:'scripts · references · assets\n필요할 때만'}],
   note:'필요할 때만 불러오는 특정 작업의 지시서: 평소에는 이름과 설명만 context에 둠',
-  src:'Progressive disclosure · Agent Skills spec, Anthropic engineering blog'},
+  src:'Agent Skills spec (agentskills.io) · Anthropic, Equipping agents for the real world with Agent Skills (2025)'},
 {sec:'Agent Skills', title:'Agent Skills 구성', type:'hub', lcap:'구성', rcap:'역할',
   left:[{t:'SKILL.md', c:'필수 · name · description + 지시'},{t:'references/', c:'선택 · 참고 문서'},{t:'scripts/', c:'선택 · 실행 코드'},{t:'assets/', c:'선택 · 템플릿 · 이미지 · 데이터'}],
   center:{t:'Agent Skill', c:'폴더 하나'},
@@ -618,18 +633,18 @@ const S = [
     {id:'w1',x:0,y:250,w:160,h:58,t:'Worker',c:'검색'},{id:'w2',x:190,y:250,w:160,h:58,t:'Worker',c:'분석'},{id:'w3',x:380,y:250,w:160,h:58,t:'Worker',c:'작성'},
     {id:'a1',x:620,y:70,w:200,h:58,t:'Agent A',c:'접수'},{id:'a2',x:920,y:70,w:200,h:58,t:'Agent B',c:'처리'},{id:'a3',x:770,y:250,w:200,h:58,t:'Agent C',c:'검토'}],
   edges:[['o','b','w1','t'],['o','b','w2','t'],['o','b','w3','t'],['a1','r','a2','l',{label:'작업 넘김'}],['a2','b','a3','r'],['a3','l','a1','b']],
-  note:'기능 · 역할 단위로 작업을 나눠 맡김', src:'Anthropic, Building Effective AI Agents (2025)'},
+  note:'기능 · 역할 단위로 작업을 나눠 맡김', src:'Anthropic, Building Effective AI Agents 가이드 (2025)'},
 {sec:'Sub-agents', title:'Sub-agent 목적', type:'hub',
   left:[{t:'Main agent', c:'Tool call로 sub-agent를 생성'}],
   center:{t:'Sub-agent', c:'별도의 Agent loop'},
   right:[{t:'Context 분리', c:'자기 context에서 작업'},{t:'격리', c:'도구 · 권한 제한'},{t:'효율', c:'요약만 반환'}],
-  note:'도구 호출로 띄운 별도 루프가 따로 일하고 결과를 돌려줌', src:'Anthropic, Effective context engineering (2025)'},
+  note:'도구 호출로 띄운 별도 루프가 따로 일하고 결과를 돌려줌', src:'Anthropic, Effective context engineering for AI agents (2025)'},
 
 {sec:'MCP', title:'MCP 개념', type:'hub',
   left:[{t:'AI Agent', c:'Claude Code · IDE · 앱'}],
   center:{t:'MCP', c:'Model Context Protocol'},
   right:[{t:'Tool calling 표준화', c:'한 번 만든 서버를 여러 앱에서'},{t:'도구 활용 context 제공', c:'도구 설명과 입력 형식을 포함한 API'}],
-  note:'에이전트와 도구를 잇는 방식을 표준으로 정한 프로토콜', src:'Model Context Protocol (Anthropic)'},
+  note:'에이전트와 도구를 잇는 방식을 표준으로 정한 프로토콜', src:'Model Context Protocol: Anthropic 2024-11 발표, 2025-12 Linux Foundation(AAIF)에 기증'},
 {sec:'MCP', title:'MCP 구성요소', type:'cardscode',
   cards:[{t:'Tools', c:'모델이 호출하는 함수', key:1},{t:'Resources', c:'사용자나 모델이 쓰는 context · 데이터'},{t:'Prompts', c:'사용자를 위한 메시지 템플릿 · workflow'}],
   label:'Tool 정의 (tools/list 결과의 한 항목, 필수는 name · inputSchema)',
@@ -731,7 +746,7 @@ const S = [
   center:{t:'Goal loop', c:'목표를 이룰 때까지 다시 돌림'},
   right:[{t:'Stop hook', c:'종료를 막고 계속'},{t:'Planning · Tasks', c:'남은 단계 확인'},{t:'목표 조건 판정', c:'매 턴 끝에 작은 모델이 판정'},{t:'Ralph loop · /goal', c:'2025-07 Ralph → 2026 제품별 /goal'}],
   note:'매 턴 끝에 조건을 판정해 이룰 때까지 계속',
-  src:'Huntley 2025-07 (Ralph) · /goal: Codex, Hermes, Claude Code, OpenClaw, opencode (2026)'},
+  src:'Huntley 2025 (Ralph) · /goal: Codex, Hermes, Claude Code, OpenClaw, opencode (2026)'},
 {sec:'Hook · Verification', title:'Verifier 검증 루프', type:'loop',
   nodes:[{t:'Explore', c:'gather context'},{t:'Plan', c:'계획'},{t:'Act', c:'take action'},{t:'Verify', c:'verify results', key:1}],
   center:{t:'Plan-Execute-Verify'},
@@ -755,7 +770,7 @@ const S = [
   {t:'데이터 분석', c:'데이터 탐색 · 분석 · 보고\n예: agentic data scientist'},
   {t:'연구', c:'자료 조사 · 실험 자동화\n예: Deep Research 에이전트'}],
   note:'같은 에이전트지만 도구와 skill, hook을 통해 다양한 작업에 응용',
-  src:'Frontier Design Benchmark (2026), 그래픽스 에이전트 서베이, AutoData 등'},
+  src:'Frontier Design Benchmark (Contra Labs × BenchFlow, 2026) · Liu et al., 2026 (그래픽스 에이전트 서베이) · Kulikov et al., 2026 (Autodata)'},
 
 {sec:'Evaluation', title:'Evaluation 확장', type:'flow', steps:[
   {t:'명확한 사용 사례', c:'자주 하는 실제 작업', key:1},
@@ -763,7 +778,7 @@ const S = [
   {t:'측정', c:'통과율 · 실패 유형'},
   {t:'확장', c:'사례와 세트를 넓힘'}],
   note:'명확한 사용 사례에서 시작해 측정이 뒷받침할 때 범위를 넓힘',
-  src:'Anthropic, Building Effective AI Agents (2025) · Demystifying evals (2026)'},
+  src:'Anthropic, Building Effective AI Agents 가이드 (2025) · Anthropic, Demystifying evals for AI agents (2026)'},
 {sec:'정리', title:'AI Agent Overview', type:'canvas', h:534, zoom:1.08, nofoot:1,
   texts:[{x:0,y:548,t:'실행 순서가 아닌 관계',cls:'lgd'}],
   boxes:[{id:'llmb',x:320,y:0,w:192,h:82,sm:1,label:'Large Language Model'},
@@ -1168,7 +1183,9 @@ const cnt=document.getElementById('cnt'), list=document.getElementById('list');
 let cur=0;
 function go(i){
   i=Math.max(0,Math.min(slides.length-1,i|0));
+  const prev=cur;
   slides[cur].classList.remove('on'); cur=i; slides[cur].classList.add('on');
+  if(i!==prev) rhNext();
   cnt.textContent=`${cur+1} / ${slides.length}`;
   /* 샌드박스 미리보기(origin null)에서는 주소를 바꿀 수 없어 SecurityError가 나므로 실패해도 넘어갑니다 */
   if(location.hash!=='#'+(cur+1)){ try{ history.replaceState(null,'','#'+(cur+1)); }catch(e){} }
@@ -1198,6 +1215,30 @@ addEventListener('keydown',e=>{
 });
 /* 터치 밀기로 넘기기는 뺐습니다(확대한 채 화면을 움직여도 장이 넘어가서). 넘기기는 버튼, 키보드, 목록으로 */
 addEventListener('hashchange',()=>{ const n=parseInt(location.hash.slice(1),10); if(n) go(n-1); });
+/* 리허설 모드: 장마다 30초. 일찍 넘기면 남은 시간이 오른쪽 게이지에 쌓이고, 30초를 넘기면 쌓인 시간에서 빠짐(0 아래는 회색) */
+const RH_SEC=30, RH_MAX=120;
+const rhEl=document.getElementById('rh'), rhBtn=document.getElementById('rehearse');
+const rhLine=rhEl.querySelector('.line'), rhPos=document.querySelector('#rhb .pos'), rhNeg=document.querySelector('#rhb .neg'), rhVal=document.getElementById('rhv');
+let rhOn=false, rhStart=0, rhBank=0, rhRaf=0;
+function rhElapsed(){ return (performance.now()-rhStart)/1000; }
+function rhNext(){ if(!rhOn) return; rhBank+=RH_SEC-rhElapsed(); rhStart=performance.now(); }
+function rhDraw(){
+  if(!rhOn) return;
+  const t=rhElapsed(), left=Math.max(0,1-t/RH_SEC), bank=rhBank-Math.max(0,t-RH_SEC);
+  rhLine.style.transform=`scaleX(${left})`;
+  const f=Math.min(1,Math.abs(bank)/RH_MAX)*50;
+  rhPos.style.height=(bank>0?f:0)+'%'; rhNeg.style.height=(bank<0?f:0)+'%';
+  rhVal.textContent=(bank>=0?'+':'−')+Math.round(Math.abs(bank))+'s';
+  rhVal.style.color=bank<0?'#8E8F92':'#C2552A';
+  rhRaf=requestAnimationFrame(rhDraw);
+}
+function rhToggle(on){
+  rhOn=on ?? !rhOn; rhBtn.setAttribute('aria-pressed',String(rhOn)); rhEl.classList.toggle('on',rhOn); document.body.classList.toggle('rh',rhOn);
+  cancelAnimationFrame(rhRaf);
+  if(rhOn){ rhBank=0; rhStart=performance.now(); rhDraw(); }
+}
+rhBtn.onclick=()=>rhToggle();
+addEventListener('keydown',e=>{ if((e.key==='r'||e.key==='R')&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&!list.classList.contains('open')) rhToggle(); });
 addEventListener('resize',fit);
 fit();
 go((parseInt(location.hash.slice(1),10)||1)-1);

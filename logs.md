@@ -1,5 +1,9 @@
 # 작업 기록
 
+- 2026-11-26: 사용자 요청으로 리허설 게이지의 음수 막대를 주황색으로 바꿈 (→ docs/presentation-slides.md)
+- 2026-11-26: 사용자 요청으로 리허설 게이지를 화면 오른쪽 가장자리의 얇은 막대로, 시간 숫자를 화면 오른쪽 아래로 옮김 (→ docs/presentation-slides.md)
+- 2026-11-26: 사용자 요청으로 발표 슬라이드에 리허설 모드를 더함(장마다 30초 선, 남긴 · 넘긴 시간 게이지) (→ docs/presentation-slides.md)
+- 2026-11-26: ai-wiki 요청 30으로 발표 슬라이드 하단 출처를 모두 다시 검증하고 표기를 고침 (→ docs/presentation-fact-checks.md)
 - 2026-11-26: 사용자 결정으로 발표 제목을 "AI Agent 구성요소"로 바꾸고 표지의 발표자 · 날짜를 채움 (→ docs/presentation-slides.md)
 - 2026-11-26: 사용자 요청으로 발표 슬라이드 66쪽 제목을 AI Agent Overview로 바꾸고, 발표 제목 후보 다섯을 제안 (→ docs/presentation-slides.md)
 - 2026-11-26: 사용자 요청으로 발표 슬라이드 66쪽의 설명 문장을 빼고 그림을 넓히고, 노드 색을 덱 팔레트에 맞춤 (→ docs/presentation-slides.md)

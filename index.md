@@ -10,7 +10,7 @@
 | [docs/evaluation-elements.md](docs/evaluation-elements.md) | Evaluation에 넣을 평가 요소(Anthropic 평가 글, 구축 가이드, AI-Native SDLC Playbook)와 매트릭스에 더한 넷 |
 | [docs/agent-components-implementation.md](docs/agent-components-implementation.md) | 구현 장의 구성요소 14개, 하니스 6개의 보급, 한 턴의 순서, 개념 장과의 대응 |
 | [docs/presentation-slides.md](docs/presentation-slides.md) | 발표 "AI Agent 구성요소"(처음 제목 "AI Agent: 구성과 구현") HTML 슬라이드(66쪽): 보는 방법, 디자인과 기준, 구성과 목차, 구성안과 순서 비교, 구현 방식, 구성안에서 바꾼 것, 검토 의견, Verification과 hook 검토 |
-| [docs/presentation-fact-checks.md](docs/presentation-fact-checks.md) | 발표 슬라이드의 사실 확인 기록: ai-wiki 요청 11(15개 장), 15(Act-only 실패와 원문 그림), 16(Qwen3.5 템플릿), 17(RAG 검색 방식), 19~21(CoT 예시), 23(초기 에이전트 사례), 28 · 29(Prompt 장, In-context learning), analysis-docs의 MCP 스펙 확인 |
+| [docs/presentation-fact-checks.md](docs/presentation-fact-checks.md) | 발표 슬라이드의 사실 확인 기록: ai-wiki 요청 11(15개 장), 15(Act-only 실패와 원문 그림), 16(Qwen3.5 템플릿), 17(RAG 검색 방식), 19~21(CoT 예시), 23(초기 에이전트 사례), 28 · 29(Prompt 장, In-context learning), 30(출처 표기 전체 검증), analysis-docs의 MCP 스펙 확인 |
 | [docs/presentation-fact-checks-transformer.md](docs/presentation-fact-checks-transformer.md) | 사실 확인 기록 중 context window와 Transformer 구조: ai-wiki 요청 18(창 크기를 정하는 구조적 요인), 22(창을 채우는 것과 thinking · 출력), 24(RoPE가 들어가는 자리), 25(최신 LLM의 위치 인코딩) |
 | [docs/hook-points.md](docs/hook-points.md) | 하니스 6개의 hook 지점(단계별), hook이 하는 일, hook과 middleware, hook을 감싸는 상자로 그리는 안, 판정 모델을 붙이는 hook, 쓰임 조사 |
 | [docs/loop-interventions.md](docs/loop-interventions.md) | 루프 개입 장치 스터디: 내장 단계 · 하니스 확장 · 사용자 hook을 묶은 분류, 하니스별 마지막 결정권, 내장 context 단계 · 기록 · 알림 비교, 루프 지점별 종합(ai-wiki 요청 27) |
