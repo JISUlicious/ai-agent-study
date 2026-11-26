@@ -1,5 +1,7 @@
 # 작업 기록
 
+- 2026-11-26: ai-wiki 요청 31 답을 발표 슬라이드 7쪽 Instruction tuning에 반영하고 '확인 중'을 지움 (→ docs/presentation-fact-checks.md)
+- 2026-11-26: 사용자 선택(2안)으로 발표 슬라이드 6쪽을 문장 완성 예시로 바꾸고 7쪽 Instruction tuning을 넣어 67쪽이 됨. ai-wiki 요청 31로 확인 중 (→ docs/presentation-slides.md)
 - 2026-11-26: 사용자 요청으로 리허설 게이지의 음수 막대를 주황색으로 바꿈 (→ docs/presentation-slides.md)
 - 2026-11-26: 사용자 요청으로 리허설 게이지를 화면 오른쪽 가장자리의 얇은 막대로, 시간 숫자를 화면 오른쪽 아래로 옮김 (→ docs/presentation-slides.md)
 - 2026-11-26: 사용자 요청으로 발표 슬라이드에 리허설 모드를 더함(장마다 30초 선, 남긴 · 넘긴 시간 게이지) (→ docs/presentation-slides.md)

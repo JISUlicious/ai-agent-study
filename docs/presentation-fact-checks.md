@@ -240,8 +240,18 @@ ai-wiki의 구성 제안(해석): Act-only의 "Nothing happens" 반복 → ReAct
 - 근거가 약하거나 중인 것: 58쪽 Replit 사례는 Lynch 2025의 참고문헌 항목만 있음(약). Raj 2026과 AI-Native SDLC Playbook은 원문 파일 없이 요약 페이지로 확인(중). 11쪽 "없애지는 못함"을 직접 쓴 문장은 없음(중).
 - 표기 원칙(해석): 회사 글은 "회사, 제목 (연도)", 논문과 개인 글은 "저자 연도" 또는 "저자 et al., 연도". 저자가 여럿인지 확인되지 않은 개인 글(Weng, Teng, Shihipar, Raj, Ning, Zhang)은 "저자 연도"로 둠.
 
+## Instruction tuning 장 확인 (ai-wiki 요청 31, 2026-11-26)
+
+| 항목 | 판정 | 근거 | 반영 |
+|---|---|---|---|
+| 6쪽 "입력 문장의 뒤를 이어 쓰는 것이 기본 동작" | 강 | GPT-3 원문 "simply by predicting what comes next" | 그대로 |
+| base 모델이 답 대신 비슷한 질문을 이어 씀 | 경향은 강, 슬라이드 예시는 원문에 없음 | InstructGPT Figure 8: GPT-3 175B가 프랑스어 지시를 비슷한 지시 목록으로 이어 쓰고, 코드 질문에 객관식 선택지를 만듦. "outputs are not cherry-picked", 코드 QA는 GPT-3도 약 50%는 답함 | 출처에 Figure 8을 적고 "예시는 설명용"을 붙임 |
+| "질문에 답하는 동작은 instruction tuning으로 학습" | 조금 단정적 | base 모델도 zero-shot 지시를 어느 정도 따름(GPT-3), "requires more careful prompting". 1.3B InstructGPT가 175B GPT-3보다 선호됨, "Making language models bigger does not inherently make them better at following a user's intent" | "질문에 바로 답하는 동작은 instruction tuning으로 크게 강화됨"으로 다듬음 |
+| "지시 · 응답 쌍으로 추가 학습" | 대체로 맞음 | FLAN은 SFT만, InstructGPT는 SFT 뒤 RLHF. RLHF는 쌍 학습이 아님 | "(+ RLHF)"를 붙임 |
+
 ## 변경 이력
 
+- 2026-11-26: ai-wiki 요청 31(6쪽 Text generation, 7쪽 Instruction tuning) 답을 적음
 - 2026-11-26: ai-wiki 요청 30(출처 표기 전체 검증) 답을 적음
 - 2026-11-26: ai-wiki 요청 29(7쪽 In-context learning) 답을 적음
 - 2026-11-26: ai-wiki 요청 28(7쪽 LLM Prompt 구성, 8쪽 Prompt engineering) 답을 적음

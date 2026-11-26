@@ -2,7 +2,7 @@
 
 사용자가 2026-11-24에 준 54쪽 구성안으로 만든 HTML 슬라이드의 기록입니다. 파일은 저장소 루트의 `ai-agent-slides.html`입니다. 구성안에 없던 질의 기반 RAG(11쪽), Tool call 반복 실패(17쪽), LLM 한계 극복 현황(25쪽), Context window 초과(36쪽), Hook 개념(49쪽), Hook 위치(50쪽), Hook 사례 둘(52, 54쪽)을 더하고, 구성안의 Transformer 구조 한계를 두 장(33, 35쪽)으로 나눠 지금은 63쪽입니다. 2026-11-24에 더한 Hook 판정 구조 장은 2026-11-25에 뺐습니다.
 
-쪽 번호 기준: 장을 자주 더하고 옮겨서, 이 문서는 구성 표, 목차 설명, 순서 비교 표만 지금(66쪽) 기준으로 고칩니다. 구현 방식, 구성안에서 바꾼 것, 검토 의견과 [presentation-fact-checks.md](presentation-fact-checks.md)의 쪽 번호는 적은 날의 기준입니다. 슬라이드 안의 목차와 쪽 참조는 자동으로 계산되어 늘 맞습니다.
+쪽 번호 기준: 장을 자주 더하고 옮겨서, 이 문서는 구성 표, 목차 설명, 순서 비교 표만 지금(67쪽) 기준으로 고칩니다. 구현 방식, 구성안에서 바꾼 것, 검토 의견과 [presentation-fact-checks.md](presentation-fact-checks.md)의 쪽 번호는 적은 날의 기준입니다. 슬라이드 안의 목차와 쪽 참조는 자동으로 계산되어 늘 맞습니다.
 
 ## 보는 방법
 
@@ -24,18 +24,18 @@
 |---|---|
 | 1–2 | 제목, 목차 |
 | 3 | 구성요소(L1 기본 구성: LLM, Tool, Memory, Agent Loop / L2 확장 구성: Planning, Verification, Evaluation, Control) |
-| 4–13 | LLM: 토큰 생성, Pre-training, Text generation, In-context learning(같은 과제를 예시 few-shot과 지시 zero-shot으로 나란히, instruction following은 지시 쪽 각주), Prompt 구성(역할별 메시지 → chat template → 토큰 열), Prompt engineering(역할 지정, 명확한 지시, 예시, 출력 형식), 한계, 한계 극복 1~3(RAG, Chain-of-Thought, Prompt chaining) |
-| 14–20 | Tool Use: 질의 기반 RAG, WebGPT, JSON 출력, Tool call 템플릿(호출 형식 지시와 모델 출력), 실행, 효과, 반복 실패(Act-only 사례) |
-| 21–23 | ReAct: 루프, 이력 활용(17쪽과 같은 과제의 ReAct 궤적), 핵심 개념(Memory, Agent loop) |
-| 24–27 | Memory(내부, 외부), Agent Loop(구조, 작업 수행: 구조와 같은 루프 그림에 예시) |
-| 28–34 | Planning: LLM 한계 극복 현황, 오작동, Prompt chaining 다시 보기, CoT 프롬프트와 구조, 구현, Primitive AI Agent |
-| 35–43 | AI Agent 한계, Context Engineering(Transformer 구조 한계 1: Attention budget, Lost in the middle, Transformer 구조 한계 2: Context window 상한, Context window 초과, 개념, 원칙, 대상, 구현) |
-| 44–47 | Agent Skills(개념, 구성), Sub-agents(Multi-agent 구조, 목적) |
-| 48–51 | MCP(개념, 구성요소, 구조, 호출 과정) |
-| 52–62 | Hook: Controls · Verification(Hook 개념, 위치, 쓰임, 사례: Context engineering, Controls 개념, Hook 사례: Control, Sandbox 필요성과 구현, 조기 종료, Goal loop 구현, Verifier 검증 루프) |
-| 63–64 | General-Purpose AI Agent: 구조(매트릭스 보드의 구현요소 흐름), 사례 |
-| 65 | Evaluation 확장 (방법론 장은 2026-11-26 사용자 요청으로 뺌) |
-| 66 | 정리: '에이전트 구성요소' 화이트보드 최종안(사용자 확정)을 옮긴 그림. AI Agent 상자 안에 Agent Loop(LLM 호출 → 완료? → Tool 호출), Context 구성, Controls(Model · Tool · Stop Hook과 Permission · Verification · Context Control · Goal loop), Internal Tools, Context engineering, Transcript. 바깥에 LLM, External Tools, Tool Exec. Env., Evaluation, 활용 사례 |
+| 4–14 | LLM: 토큰 생성, Pre-training, Text generation(문장 완성), Instruction tuning(pre-trained와 instruction-tuned 모델의 같은 질문 비교), In-context learning(같은 과제를 예시 few-shot과 지시 zero-shot으로 나란히, instruction following은 지시 쪽 각주), Prompt 구성(역할별 메시지 → chat template → 토큰 열), Prompt engineering(역할 지정, 명확한 지시, 예시, 출력 형식), 한계, 한계 극복 1~3(RAG, Chain-of-Thought, Prompt chaining) |
+| 15–21 | Tool Use: 질의 기반 RAG, WebGPT, JSON 출력, Tool call 템플릿(호출 형식 지시와 모델 출력), 실행, 효과, 반복 실패(Act-only 사례) |
+| 22–24 | ReAct: 루프, 이력 활용(17쪽과 같은 과제의 ReAct 궤적), 핵심 개념(Memory, Agent loop) |
+| 25–28 | Memory(내부, 외부), Agent Loop(구조, 작업 수행: 구조와 같은 루프 그림에 예시) |
+| 29–35 | Planning: LLM 한계 극복 현황, 오작동, Prompt chaining 다시 보기, CoT 프롬프트와 구조, 구현, Primitive AI Agent |
+| 36–44 | AI Agent 한계, Context Engineering(Transformer 구조 한계 1: Attention budget, Lost in the middle, Transformer 구조 한계 2: Context window 상한, Context window 초과, 개념, 원칙, 대상, 구현) |
+| 45–48 | Agent Skills(개념, 구성), Sub-agents(Multi-agent 구조, 목적) |
+| 49–52 | MCP(개념, 구성요소, 구조, 호출 과정) |
+| 53–63 | Hook: Controls · Verification(Hook 개념, 위치, 쓰임, 사례: Context engineering, Controls 개념, Hook 사례: Control, Sandbox 필요성과 구현, 조기 종료, Goal loop 구현, Verifier 검증 루프) |
+| 64–65 | General-Purpose AI Agent: 구조(매트릭스 보드의 구현요소 흐름), 사례 |
+| 66 | Evaluation 확장 (방법론 장은 2026-11-26 사용자 요청으로 뺌) |
+| 67 | 정리: '에이전트 구성요소' 화이트보드 최종안(사용자 확정)을 옮긴 그림. AI Agent 상자 안에 Agent Loop(LLM 호출 → 완료? → Tool 호출), Context 구성, Controls(Model · Tool · Stop Hook과 Permission · Verification · Context Control · Goal loop), Internal Tools, Context engineering, Transcript. 바깥에 LLM, External Tools, Tool Exec. Env., Evaluation, 활용 사례 |
 
 목차는 처음에 제목 "구성과 구현"에 맞춰 "구성"(3~28쪽)과 "구현"(29~55쪽) 두 부분으로 묶었습니다. 2026-11-25 사용자 의견(두 부분의 경계가 모호함)으로 묶음을 없애고, 섹션 제목 18개를 쪽 범위와 함께 두 단으로 나열합니다. 제목은 각 장 오른쪽 위의 섹션 이름을 따릅니다. 그래서 전에 한 줄로 합쳤던 Memory · Agent Loop와 AI Agent 한계 · Context Engineering을 나누고, Planning 범위에 들어 있던 Primitive AI Agent(31쪽)도 따로 적습니다. Hook 섹션은 Hook(49~52), Hook · Controls(53~56, Sandbox 포함), Hook · Verification(57~59) 세 줄입니다. 쪽 범위는 2026-11-25부터 장의 섹션 이름으로 계산하므로, 장을 더하거나 옮겨도 목차를 따로 고칠 필요가 없습니다(아래 "구현 방식"). 고려한 대안은 둘이었습니다. 하나는 이전 13줄을 묶음 제목만 빼고 그대로 두는 것인데, 합친 줄이 장의 섹션 이름과 어긋나 택하지 않았습니다. 다른 하나는 쪽 번호까지 빼는 것인데, 발표 중 목차에서 바로 이동할 때 쪽 범위가 쓸모 있어 남겼습니다.
 
@@ -43,38 +43,39 @@
 
 ### 구성안과 순서 비교 (2026-11-25 확인)
 
-처음 구성안(54쪽)과 지금 슬라이드(66쪽)를 한 쪽씩 맞댄 결과입니다. 구성안에 없던 장을 여덟 더했고(11쪽 질의 기반 RAG, 17쪽 Tool call 반복 실패, 25쪽 LLM 한계 극복 현황, 36쪽 Context window 초과, 49쪽 Hook 개념, 50쪽 Hook 위치, 52쪽 Hook 사례: Context engineering, 54쪽 Hook 사례: Control), 한 장을 둘로 나눴고(Transformer 구조 한계 → 33, 35쪽), 자리를 옮긴 곳이 셋(Sub-agents 앞당김, Hook 쓰임을 Controls 앞으로, Lost in the middle을 Transformer 구조 한계 1과 2 사이로)입니다. 나머지는 순서 그대로 쪽 번호만 밀렸습니다.
+처음 구성안(54쪽)과 지금 슬라이드(67쪽)를 한 쪽씩 맞댄 결과입니다. 구성안에 없던 장을 여덟 더했고(11쪽 질의 기반 RAG, 17쪽 Tool call 반복 실패, 25쪽 LLM 한계 극복 현황, 36쪽 Context window 초과, 49쪽 Hook 개념, 50쪽 Hook 위치, 52쪽 Hook 사례: Context engineering, 54쪽 Hook 사례: Control), 한 장을 둘로 나눴고(Transformer 구조 한계 → 33, 35쪽), 자리를 옮긴 곳이 셋(Sub-agents 앞당김, Hook 쓰임을 Controls 앞으로, Lost in the middle을 Transformer 구조 한계 1과 2 사이로)입니다. 나머지는 순서 그대로 쪽 번호만 밀렸습니다.
 
 | 구성안 | 지금 | 내용 | 바뀐 점 |
 |---|---|---|---|
 | 1–6 | 1–6 | 제목부터 LLM Text generation까지 | 그대로 |
-| 없음 | 7 | In-context learning | 새 장(2026-11-26 사용자 요청, in-context learning과 instruction following을 함께 설명하려고 Prompt 두 장 앞에 둠. 처음 제목은 "In-context learning과 Instruction following"이었으나 ai-wiki 요청 29 답으로 바꿈. 15쪽 JSON 출력의 두 알약이 이 장을 가리킴) |
-| 없음 | 8 | LLM Prompt 구성 | 새 장(2026-11-26 사용자 요청, prompt가 역할별 메시지를 chat template으로 이어 붙인 토큰 열임을 보임) |
-| 없음 | 9 | Prompt engineering | 새 장(2026-11-26 사용자 요청, 37쪽 Prompt engineering → Context engineering 대비의 앞 장) |
-| 7–10 | 10–13 | LLM 한계부터 한계 극복 3(Prompt chaining)까지 | 순서 그대로, 두 쪽 밀림 |
-| 없음 | 14 | 질의 기반 RAG | 새 장(2026-11-25 사용자 제안, 질문으로 한 번 검색하는 일반 RAG를 보여 WebGPT로 잇는 다리) |
-| 11–15 | 15–19 | WebGPT부터 Tool use 효과까지 | 순서 그대로, 한 쪽 밀림 |
-| 없음 | 20 | Tool call 반복 실패 | 새 장(2026-11-25 사용자 요청, ReAct로 가는 근거) |
-| 16–22 | 21–27 | ReAct부터 Agent Loop까지 | 순서 그대로, 두 쪽 밀림 |
-| 없음 | 28 | LLM 한계 극복 현황 | 새 장(2026-11-25 사용자 요청, 복잡한 작업 오작동으로 잇는 다리) |
-| 23–29 | 29–35 | Planning부터 AI Agent 한계까지 | 순서 그대로, 세 쪽 밀림 |
-| 30 | 36, 38 | Transformer 구조 한계 | 두 장으로 나눔(2026-11-25 사용자 요청): 33쪽 한계 1 Attention budget, 35쪽 한계 2 Context window 상한 |
-| 31 | 37 | Lost in the middle | 한계 1과 한계 2 사이로 옮김(2026-11-25 사용자 요청) |
-| 없음 | 39 | Context window 초과 | 새 장(2026-11-25 사용자 요청, 대화 이력과 문서가 쌓여 창을 넘고 thinking과 출력도 창을 씀) |
-| 32–37 | 40–45 | Context engineering 개념부터 Agent Skills까지 | 순서 그대로, 다섯 쪽 밀림 |
-| 49–50 | 46–47 | Sub-agents | Agent Skills 뒤로 앞당김(2026-11-24 사용자 승인) |
-| 38–41 | 48–51 | MCP | 순서 그대로, 일곱 쪽 밀림 |
-| 없음 | 52 | Hook 개념 | 새 장(2026-11-26 사용자 구성: 이전 단계 → Hook → 다음 단계, Hook이 하는 일 다섯) |
-| 없음 | 53 | Hook 위치 | 새 장(2026-11-26 사용자 구성: LLM 호출 · Tool 호출 루프의 화살표 넷 모두에 hook) |
-| 43 | 54 | Hook 사용 예시 → Hook 쓰임 | 2026-11-26 사용자 구성으로 다섯 범주 표(context 가공, permission · HITL, 검증 · 계속 강제, metadata 추출, 자동화)로 다시 씀 |
-| 없음 | 55 | Hook 사례: Context engineering | 새 장(2026-11-25 사용자 요청, 40쪽 Context engineering 구현과 이어짐) |
-| 42 | 56 | Controls | Hook 네 장 뒤로 감 |
-| 없음 | 57 | Hook 사례: Control | 새 장(2026-11-25 사용자 요청). 2026-11-24에 더한 Hook 판정 구조 장은 이 장과 겹쳐 뺌 |
-| 44–45 | 58–59 | Sandbox | 순서 그대로 |
-| 46–48 | 60–62 | Goal Loop | 순서 그대로, 섹션 이름이 Hook · Verification으로 바뀜 |
-| 51–54 | 63–65 | General-Purpose AI Agent, Evaluation | 순서 그대로, 아홉 쪽 밀림. Evaluation 방법론(구성안 53쪽)은 2026-11-26 사용자 요청으로 뺌 |
+| 없음 | 7 | Instruction tuning | 새 장(2026-11-26 사용자 요청 2안: 6쪽 Text generation을 문장 완성 예시로 바꾸고, 질문에 답하는 동작은 이 장에서 instruction tuning으로 설명) |
+| 없음 | 8 | In-context learning | 새 장(2026-11-26 사용자 요청, in-context learning과 instruction following을 함께 설명하려고 Prompt 두 장 앞에 둠. 처음 제목은 "In-context learning과 Instruction following"이었으나 ai-wiki 요청 29 답으로 바꿈. 15쪽 JSON 출력의 두 알약이 이 장을 가리킴) |
+| 없음 | 9 | LLM Prompt 구성 | 새 장(2026-11-26 사용자 요청, prompt가 역할별 메시지를 chat template으로 이어 붙인 토큰 열임을 보임) |
+| 없음 | 10 | Prompt engineering | 새 장(2026-11-26 사용자 요청, 37쪽 Prompt engineering → Context engineering 대비의 앞 장) |
+| 7–10 | 11–14 | LLM 한계부터 한계 극복 3(Prompt chaining)까지 | 순서 그대로, 두 쪽 밀림 |
+| 없음 | 15 | 질의 기반 RAG | 새 장(2026-11-25 사용자 제안, 질문으로 한 번 검색하는 일반 RAG를 보여 WebGPT로 잇는 다리) |
+| 11–15 | 16–20 | WebGPT부터 Tool use 효과까지 | 순서 그대로, 한 쪽 밀림 |
+| 없음 | 21 | Tool call 반복 실패 | 새 장(2026-11-25 사용자 요청, ReAct로 가는 근거) |
+| 16–22 | 22–28 | ReAct부터 Agent Loop까지 | 순서 그대로, 두 쪽 밀림 |
+| 없음 | 29 | LLM 한계 극복 현황 | 새 장(2026-11-25 사용자 요청, 복잡한 작업 오작동으로 잇는 다리) |
+| 23–29 | 30–36 | Planning부터 AI Agent 한계까지 | 순서 그대로, 세 쪽 밀림 |
+| 30 | 37, 39 | Transformer 구조 한계 | 두 장으로 나눔(2026-11-25 사용자 요청): 33쪽 한계 1 Attention budget, 35쪽 한계 2 Context window 상한 |
+| 31 | 38 | Lost in the middle | 한계 1과 한계 2 사이로 옮김(2026-11-25 사용자 요청) |
+| 없음 | 40 | Context window 초과 | 새 장(2026-11-25 사용자 요청, 대화 이력과 문서가 쌓여 창을 넘고 thinking과 출력도 창을 씀) |
+| 32–37 | 41–46 | Context engineering 개념부터 Agent Skills까지 | 순서 그대로, 다섯 쪽 밀림 |
+| 49–50 | 47–48 | Sub-agents | Agent Skills 뒤로 앞당김(2026-11-24 사용자 승인) |
+| 38–41 | 49–52 | MCP | 순서 그대로, 일곱 쪽 밀림 |
+| 없음 | 53 | Hook 개념 | 새 장(2026-11-26 사용자 구성: 이전 단계 → Hook → 다음 단계, Hook이 하는 일 다섯) |
+| 없음 | 54 | Hook 위치 | 새 장(2026-11-26 사용자 구성: LLM 호출 · Tool 호출 루프의 화살표 넷 모두에 hook) |
+| 43 | 55 | Hook 사용 예시 → Hook 쓰임 | 2026-11-26 사용자 구성으로 다섯 범주 표(context 가공, permission · HITL, 검증 · 계속 강제, metadata 추출, 자동화)로 다시 씀 |
+| 없음 | 56 | Hook 사례: Context engineering | 새 장(2026-11-25 사용자 요청, 40쪽 Context engineering 구현과 이어짐) |
+| 42 | 57 | Controls | Hook 네 장 뒤로 감 |
+| 없음 | 58 | Hook 사례: Control | 새 장(2026-11-25 사용자 요청). 2026-11-24에 더한 Hook 판정 구조 장은 이 장과 겹쳐 뺌 |
+| 44–45 | 59–60 | Sandbox | 순서 그대로 |
+| 46–48 | 61–63 | Goal Loop | 순서 그대로, 섹션 이름이 Hook · Verification으로 바뀜 |
+| 51–54 | 64–66 | General-Purpose AI Agent, Evaluation | 순서 그대로, 아홉 쪽 밀림. Evaluation 방법론(구성안 53쪽)은 2026-11-26 사용자 요청으로 뺌 |
 
-- 2026-11-26 Prompt 세 장(7~9쪽)을 넣으면서 10쪽부터 세 쪽씩 더 밀렸습니다. 위 표의 "지금" 열은 이를 반영했고, "바뀐 점"의 밀린 쪽 수는 넣기 전 기준입니다.
+- 2026-11-26 Instruction tuning과 Prompt 세 장(7~10쪽)을 넣으면서 11쪽부터 네 쪽씩 더 밀렸습니다. 위 표의 "지금" 열은 이를 반영했고, "바뀐 점"의 밀린 쪽 수는 넣기 전 기준입니다.
 
 - 구성안의 Controls(42), Hook(43), Sandbox(44~45), Goal Loop(46~48) 네 섹션은 2026-11-24 사용자 결정으로 "Hook: Controls · Verification" 한 섹션(지금 49~59쪽)이 됐습니다.
 - Hook 쓰임을 옮긴 경위: 2026-11-25에 제안한 두 안은 "46쪽(당시 쪽 번호)을 그 자리에서 쓰임별로 바꾸기"와 "그 장은 두고 섹션 앞에 Hook 쓰임 장 추가"였고, 사용자 답은 "넓혀서 작성"이었습니다. 첫 안대로 넓히면서 자리는 섹션 맨 앞으로 옮겼습니다. 쓰임 전체에서 판정(당시 판정 구조 표)으로 좁혀 가는 순서가 낫다고 본 판단이고, 이동은 따로 승인받지 않았습니다. 2026-11-25 사용자 요청으로 Hook 섹션을 개념 → 쓰임 → 사례(Context engineering)로, Controls 쪽에 사례(Control)를 두는 구성으로 다시 짰고, 판정 구조 장은 Control 사례와 겹쳐 뺐습니다. 결과 판정(Stop hook, /goal, verifier)은 Verification 장(57~59쪽)이 다룹니다. 2026-11-26에는 hook 스터디([hook-uses.md](hook-uses.md), [loop-interventions.md](loop-interventions.md))를 마친 뒤 사용자 구성으로 앞 두 장을 개념 · 위치 · 쓰임 세 장으로 나눴습니다.
@@ -154,6 +155,8 @@
 
 ## 변경 이력
 
+- 2026-11-26: ai-wiki 요청 31 답으로 7쪽을 다듬음(설명 문장을 "크게 강화됨"으로, 오른쪽 열에 "+ RLHF", 출처에 InstructGPT Figure 8과 "예시는 설명용"). '확인 중'을 지움. Python 예시는 6쪽과 이어지게 그대로 두고, 원문 예(코드 질문 → 객관식)로 바꾸는 안은 쓰지 않음(사용자 확인: 예시 유지)
+- 2026-11-26: 사용자 검토 요청에 두 안을 비교함(1안: 6쪽 앞에 instruction tuning, 2안: 6쪽을 문장 완성으로 바꾸고 다음 장에 QA 예시와 instruction tuning). 사용자가 2안을 고름. 6쪽 예시를 "Python에서 리스트를 뒤집으려면" → 이어 쓰기로 바꾸고, 7쪽 Instruction tuning(pre-trained 모델은 비슷한 질문을 이어 쓰고 instruction-tuned 모델은 답함)을 넣어 67쪽이 됨. In-context learning의 zero-shot 각주를 7쪽 참조로 줄임. ai-wiki 요청 31로 확인 중. 아티팩트 링크에 다시 올림
 - 2026-11-26: 사용자 요청으로 리허설 게이지의 음수(아래쪽) 막대를 회색에서 주황색으로 바꿈. 숫자는 음수일 때 회색 그대로. 아티팩트 링크에 다시 올림
 - 2026-11-26: 사용자 요청(너무 눈에 띔)으로 리허설 게이지를 슬라이드 안에서 화면 오른쪽 가장자리의 3px 막대로 옮기고 옅게 함. 시간 숫자는 화면 오른쪽 아래에 작게. 아티팩트 링크에 다시 올림
 - 2026-11-26: 사용자 요청으로 리허설 모드를 더함(버튼 · R 키, 장마다 30초 줄어드는 아래 선, 일찍 넘긴 시간이 쌓이고 넘긴 시간이 빠지는 오른쪽 게이지, 음수는 회색). 아티팩트 링크에 다시 올림
