@@ -336,6 +336,9 @@ body{word-break:keep-all;overflow-wrap:break-word}
 #rhb .neg{top:50%;background:var(--accent);opacity:.45}
 #rhv{position:fixed;right:8px;bottom:48px;font:500 11px var(--mono);color:#8E8F92;pointer-events:none;z-index:4;display:none}
 body.rh #rhb,body.rh #rhv{display:block}
+/* 펜: 슬라이드와 같은 자리에 얹는 그리기 층. 장마다 따로 남음 */
+#ink{position:fixed;left:50%;top:50%;width:1280px;height:720px;margin:-360px 0 0 -640px;transform:scale(var(--s));z-index:3;pointer-events:none}
+body.pen #ink{pointer-events:auto;cursor:crosshair;touch-action:none}
 #cnt{min-width:58px;text-align:center;font-family:var(--mono)}
 #list{position:fixed;inset:0;background:rgba(26,26,24,.55);display:none;align-items:center;justify-content:center;z-index:10}
 #list.open{display:flex}
@@ -348,7 +351,7 @@ body.rh #rhb,body.rh #rhv{display:block}
   html,body{overflow:visible;height:auto;background:#fff}
   #stage{position:static}
   .slide{position:relative;left:auto;top:auto;margin:0;transform:none;visibility:visible;break-after:page;page-break-after:always}
-  #hud,#list,#rh,#rhb,#rhv{display:none!important}
+  #hud,#list,#rh,#rhb,#rhv,#ink{display:none!important}
   @page{size:1280px 720px;margin:0}
 }
 </style>
@@ -367,8 +370,11 @@ body.rh #rhb,body.rh #rhv{display:block}
   <span id="cnt"></span>
   <button id="next" type="button" aria-label="다음 슬라이드">›</button>
   <button id="openList" type="button">목록</button>
+  <button id="pen" type="button" aria-pressed="false" title="펜 (P) · 지우기 (C)">펜</button>
+  <button id="inkClear" type="button" title="이 장의 그림 지우기 (C)">지우기</button>
   <button id="rehearse" type="button" aria-pressed="false" title="리허설 모드 (R)">리허설</button>
 </nav>
+<canvas id="ink" width="1280" height="720" aria-hidden="true"></canvas>
 <div id="rh" aria-hidden="true"><div class="line"></div></div>
 <div id="rhb" aria-hidden="true"><i class="pos"></i><i class="neg"></i></div>
 <div id="rhv" aria-hidden="true"></div>
@@ -1190,7 +1196,7 @@ function go(i){
   i=Math.max(0,Math.min(slides.length-1,i|0));
   const prev=cur;
   slides[cur].classList.remove('on'); cur=i; slides[cur].classList.add('on');
-  if(i!==prev) rhNext();
+  if(i!==prev){ rhNext(); inkDraw(); }
   cnt.textContent=`${cur+1} / ${slides.length}`;
   /* 샌드박스 미리보기(origin null)에서는 주소를 바꿀 수 없어 SecurityError가 나므로 실패해도 넘어갑니다 */
   if(location.hash!=='#'+(cur+1)){ try{ history.replaceState(null,'','#'+(cur+1)); }catch(e){} }
@@ -1244,8 +1250,34 @@ function rhToggle(on){
 }
 rhBtn.onclick=()=>rhToggle();
 addEventListener('keydown',e=>{ if((e.key==='r'||e.key==='R')&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&!list.classList.contains('open')) rhToggle(); });
+/* 펜: P로 켜고 끔, C로 이 장의 그림 지움. 그림은 장마다 따로 남고 펜을 꺼도 보임 */
+const ink=document.getElementById('ink'), penBtn=document.getElementById('pen'), ictx=ink.getContext('2d');
+const inkStrokes=new Map(); let penOn=false, inkCur=null;
+function inkSize(){ const r=Math.min(3,Math.max(1,(window.devicePixelRatio||1)*parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--s')||1))); ink.width=1280*r; ink.height=720*r; ictx.setTransform(r,0,0,r,0,0); inkDraw(); }
+function inkDraw(){
+  ictx.clearRect(0,0,1280,720);
+  ictx.lineCap='round'; ictx.lineJoin='round'; ictx.strokeStyle='#F0591E'; ictx.lineWidth=4;
+  for(const st of inkStrokes.get(cur)||[]){ ictx.beginPath(); st.forEach(([x,y],k)=>k?ictx.lineTo(x,y):ictx.moveTo(x,y)); if(st.length===1) ictx.lineTo(st[0][0]+0.1,st[0][1]); ictx.stroke(); }
+}
+function inkPt(e){ const r=ink.getBoundingClientRect(); return [(e.clientX-r.left)/r.width*1280,(e.clientY-r.top)/r.height*720]; }
+ink.addEventListener('pointerdown',e=>{ if(!penOn) return; e.preventDefault(); ink.setPointerCapture(e.pointerId); inkCur=[inkPt(e)]; if(!inkStrokes.has(cur)) inkStrokes.set(cur,[]); inkStrokes.get(cur).push(inkCur); inkDraw(); });
+ink.addEventListener('pointermove',e=>{ if(!inkCur) return; inkCur.push(inkPt(e)); inkDraw(); });
+const inkEnd=()=>{ inkCur=null; };
+ink.addEventListener('pointerup',inkEnd); ink.addEventListener('pointercancel',inkEnd);
+function penToggle(on){ penOn=on ?? !penOn; penBtn.setAttribute('aria-pressed',String(penOn)); document.body.classList.toggle('pen',penOn); }
+penBtn.onclick=()=>penToggle();
+function inkClear(){ inkStrokes.delete(cur); inkDraw(); }
+document.getElementById('inkClear').onclick=inkClear;
+addEventListener('keydown',e=>{
+  if(e.metaKey||e.ctrlKey||e.altKey||list.classList.contains('open')) return;
+  if(e.key==='p'||e.key==='P') penToggle();
+  else if(e.key==='c'||e.key==='C') inkClear();
+  else if(e.key==='Escape'&&penOn) penToggle(false);
+});
+addEventListener('resize',()=>requestAnimationFrame(inkSize));
 addEventListener('resize',fit);
 fit();
+inkSize();
 go((parseInt(location.hash.slice(1),10)||1)-1);
 </script>
 </body>
